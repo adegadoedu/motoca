@@ -148,7 +148,7 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 <section id="title" class="screen dim hidden">
   <h1 class="logo out">Motoca<small>Rua da Adega</small></h1>
   <p class="note out">O Doutor Carimbo, chefe da Repartição, encheu a rua de papelada para travar a Adega do Edu. Corra, junte as moedas do caixa e chegue até a placa.</p>
-  <div class="row"><button class="btn" id="startBtn">Começar</button><button class="btn ghost hidden" id="contBtn"></button><button class="btn ghost" id="rankBtn">Ranking</button></div>
+  <div class="row"><button class="btn" id="startBtn">Começar</button><button class="btn ghost" id="treinoBtn">Treino</button><button class="btn ghost hidden" id="contBtn"></button><button class="btn ghost" id="rankBtn">Ranking</button></div>
   <p class="note out" id="contaInfo" style="font-size:16px"></p>
   <p class="note out" id="keysNote" style="font-size:16px">Teclado: setas ou A/D para correr, espaço ou W para pular.</p>
 </section>
@@ -384,10 +384,27 @@ const door = (tx, id, ty0=0, ty1=13) => { doors.push({ tx, ty0, ty1, id, open: f
 const hint = (tx, text) => hints.push({ x: tx * T, text, shown: false });
 const checkpoint = (tx, ty=13) => checks.push({ x: tx * T + 8, y: ty * T, on:false });
 
+function levelTreino(){
+  newGrid(110);
+  const tc = isTouch;
+  ground(0, 44);
+  hint(2, tc ? 'Encoste o dedo na esquerda da tela e arraste para a direita para correr' : 'Segure → (ou D) para correr');
+  ringLine(5, 4, 12);
+  hint(10, tc ? 'Toque PULAR para pular. Segure para pular mais alto' : 'Espaço (ou W) para pular. Segure para pular mais alto');
+  awning(13, 17, 10); ringLine(13, 4, 9);
+  hint(19, 'Pule na caixa para abrir o bônus'); box(22, 12, 'rings');
+  hint(25, 'Pule em cima dos inimigos para derrotá-los'); enemy('cachorro', 30, 2);
+  hint(33, 'A mola joga você lá no alto'); spring(37); ringCol(37, 4, 7);
+  hint(41, 'Espere a plataforma chegar e pule nela'); plat(46, 11, 2, 0.022); ringLine(46, 3, 9);
+  ground(52, 110);
+  hint(54, 'Se apanhar, você perde as moedas: pegue de volta!'); enemy('pombo', 60, 2); ringLine(56, 6, 12);
+  hint(66, 'Ponto de controle: se cair, você volta daqui'); checkpoint(70);
+  hint(76, 'Na fase, ache o documento escondido e chegue até a placa!'); ringArc(78, 6, 11, 30);
+  goal = { x: 92 * T + 8, y: 13 * T, done: false };
+  blocks(106, 110, 0, 13);
+}
 function level1(){
   newGrid(270);
-  hint(2, isTouch ? 'Arraste o botão redondo para a direita para correr' : 'Segure → para correr'); hint(11, isTouch ? 'Toque PULAR para pular (segure para ir mais alto)' : 'Espaço para pular (segure para ir mais alto)');
-  hint(13, 'Pule na caixa para abrir o bônus'); hint(19, 'Pule em cima dos inimigos para derrotá-los'); hint(31, 'A mola joga você lá no alto'); hint(46, 'Se apanhar, você perde as moedas: pegue de volta!');
   ground(0, 45);
   ringLine(8, 5, 12);
   box(14, 12, 'rings');
@@ -895,7 +912,8 @@ function hardenLevel(){
   for (const m of plats) m.sp *= 1.2;
   if (boss) { if (boss.kind === 'monster') { boss.hp = 12; boss.maxHp = 12; } else { boss.hp = 8; boss.maxHp = 8; } }
 }
-function buildLevel(){ LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18 })[G.act](); hardenLevel(); }
+function buildLevel(){ if (G.training) { LV = Object.assign({}, ACTS[1], { name: 'Treino', sub: 'Aprenda a jogar', facade: null, sign: false }); levelTreino(); Object.assign(HARD, { sp: 1, hop: 45, hopV: 1.1, crUp: 100, spawn: 110 }); return; }
+  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18 })[G.act](); hardenLevel(); hints.length = 0; }
 const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 'B' : (ty < 0 || ty >= ROWS) ? '.' : grid[ty][tx];
 const solid = c => c === '#' || c === 'B' || c === 'D' || c === 'C';
 
@@ -1051,7 +1069,7 @@ function interact(prevY){
     bn.used = true; G.score += 50; sfx('check'); pop(bn.x, bn.y - 52, 'Senha retirada!', 90, 0.3);
     for (const d of doors) if (d.id === bn.id && !d.open) { d.open = true; for (let y = d.ty0; y < d.ty1; y++) setT(d.tx, y, '.'); }
   }
-  for (const h of hints) if (!h.shown && P.x > h.x) { h.shown = true; pop(P.x + 40, P.y - 62, h.text, 200, 0.05); }
+  for (const h of hints) if (!h.shown && P.x > h.x) { h.shown = true; if (G.hintPop) G.hintPop.life = Math.min(G.hintPop.life, 1); pop(P.x + 40, P.y - 62, h.text, 220, 0.03); G.hintPop = pops[pops.length - 1]; break; }
   if (npc && !npc.said && P.x > npc.x - 70) { npc.said = true; pop(npc.x, npc.y - 64, npc.text, 200, 0.1); }
   for (const k of checks) if (!k.on && Math.abs(k.x - P.x) < 12) { k.on = true; G.check = { x:k.x, y:k.y, time:G.frames }; sfx('check'); }
   if (goal && !goal.done && P.x > goal.x) { goal.done = true; P.state = 'goal'; G.goalT = 0; sfx('goal'); }
@@ -2449,6 +2467,13 @@ function finish(){
   const tb = secs < 70 ? 10000 : secs < 95 ? 5000 : secs < 130 ? 3000 : secs < 170 ? 2000 : secs < 240 ? 1000 : 0;
   const rb = G.ringsN * 100, base = G.score, total = base + tb + rb; G.score = total;
   const tm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  if (G.training) {
+    $('doneTitle').textContent = 'Treino concluído!';
+    $('tally').innerHTML = `<span>Tempo ${tm}</span><b>${tb}</b><span>Moedas ${G.ringsN}</span><b>${rb}</b><span>Total</span><b>${total}</b>`;
+    $('seloNote').textContent = 'Agora você já sabe jogar. No jogo de verdade não tem mais dica: boa sorte contra o Doutor Carimbo!';
+    $('eduBox').classList.add('hidden'); $('againBtn').textContent = 'Começar o jogo';
+    againAction = () => startAct(1, true); $('done').classList.remove('hidden'); return;
+  }
   const actPts = total - (G.actStartScore || 0), rkey = 'motoca-rec-' + G.act; let rec = null;
   try { rec = JSON.parse(localStorage.getItem(rkey) || 'null'); } catch(e) {}
   const newRec = !rec || actPts > rec.pts;
@@ -2475,10 +2500,10 @@ function finish(){
   saveFlag('motoca-ato', Math.min(BUILT + 1, G.act + 1));
   $('done').classList.remove('hidden');
 }
-function startAct(n, fresh){
+function startAct(n, fresh, training){
   audio();
   ['title','done','over'].forEach(id => $(id).classList.add('hidden')); $('eduBox').classList.add('hidden'); closeMap();
-  G.act = n; if (fresh) { G.score = 0; G.lives = 3; }
+  G.act = n; G.training = !!training; G.hintPop = null; if (fresh) { G.score = 0; G.lives = 3; }
   G.check = null; buildLevel(); spawn(); applySky(LV.sky); buildStatic(); buildDynamic();
   for (const p of parts) p.life = 0; updParts();
   G.state = 'card'; G.cardT = 0; G.paused = false; hudCache = ''; cam.look = 0; G.actStartScore = G.score;
@@ -2815,7 +2840,8 @@ $('startBtn').onclick = startGame;
 $('contBtn').onclick = () => { audio(); openMap({}); };
 $('againBtn').onclick = () => againAction && againAction();
 $('menuBtn').onclick = showTitle;
-$('retryBtn').onclick = () => startAct(G.act, true);
+$('retryBtn').onclick = () => startAct(G.act, true, G.training);
+$('treinoBtn').onclick = () => startAct(1, true, true);
 if (isTouch) $('keysNote').textContent = 'No celular: arraste o botão redondo da esquerda para os lados para correr e toque PULAR para pular.';
 document.addEventListener('visibilitychange', () => { if (document.hidden && (G.state === 'play' || G.state === 'card')) setPause(true); });
 function setPause(on){
@@ -2827,7 +2853,7 @@ function setPause(on){
 }
 $('pauseBtn').onclick = () => { audio(); setPause(true); };
 $('resumeBtn').onclick = () => setPause(false);
-$('restartBtn').onclick = () => { setPause(false); G.score = G.actStartScore || 0; startAct(G.act, false); };
+$('restartBtn').onclick = () => { setPause(false); G.score = G.actStartScore || 0; startAct(G.act, false, G.training); };
 $('pMapBtn').onclick = () => { setPause(false); openMap({ from: G.act, to: G.act }); };
 $('musicBtn').onclick = () => setMusic(!musicOff);
 $('overMap').onclick = () => openMap({ from: G.act, to: G.act });
