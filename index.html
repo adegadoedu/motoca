@@ -782,7 +782,88 @@ function level18(){
   blocks(72, 76, 0, 13);
   boss = { kind:'monster', a0:56, a1:72, x:(72 - 3) * T + 8, y:13 * T - 320, vy:0, vx:0, hp:9, maxHp:9, phase:1, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, crouch:0, arm:0 };
 }
-function buildLevel(){ LV = ACTS[G.act]; ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18 })[G.act](); }
+const HARD = { sp: 1, hop: 45, hopV: 1.1, crUp: 100, spawn: 110 };
+const THEMEN = {
+  street: { g: ['cachorro', 'carrinho'], f: ['pombo'] }, office: { g: ['carimbo', 'carrinho', 'cachorro'], f: ['pombo'] },
+  ice: { g: ['pinguim', 'garrafa'], f: ['pombo'] }, market: { g: ['caixote', 'cachorro', 'carrinho'], f: ['prancheta'] },
+  roofs: { g: ['gato', 'leaozinho'], f: ['morcego'] }, palace: { g: ['carimbo', 'carrinho', 'leaozinho'], f: ['prancheta', 'morcego'] }
+};
+function rngOf(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
+function colTop(x){ for (let r = 0; r < ROWS; r++) if (grid[r][x] !== '.') return r; return -1; }
+function findSplit(){
+  const gx = Math.floor(goal.x / T);
+  for (let x = gx - 12; x > gx - 70; x--) {
+    let ok = true; const top = colTop(x);
+    if (top < 10) continue;
+    for (let k = -2; k <= 2 && ok; k++) { if (colTop(x + k) !== top) ok = false; for (let r = top; r < ROWS && ok; r++) if (grid[r][x + k] !== '#') ok = false; }
+    const px = x * T;
+    if (belts.some(b => b.x0 <= px && b.x1 >= px) || vents.some(b => b.x0 <= px && b.x1 >= px) || plats.some(m => Math.abs(m.x0 + 24 - px) < m.range + 64) || doors.some(d => Math.abs(d.tx - x) < 3)) ok = false;
+    if (ok) return { x, gy: top };
+  }
+  return null;
+}
+function insertCols(at, add, gy){
+  for (let r = 0; r < ROWS; r++) grid[r].splice(at, 0, ...Array(add).fill(r >= gy ? '#' : '.'));
+  COLS += add;
+  const P0 = at * T, dx = add * T, sh = o => { if (o && o.x >= P0) o.x += dx; };
+  [rings, boxes, springs, cones, checks, pads, buttons, spawners, crushers, hints].forEach(a => a.forEach(sh));
+  [selo, goal, npc].forEach(sh);
+  enemies.forEach(e => { if (e.x >= P0) { e.x += dx; e.x0 += dx; e.x1 += dx; } });
+  plats.forEach(m => { if (m.x0 >= P0) { m.x0 += dx; m.x += dx; } });
+  [belts, vents].forEach(a => a.forEach(b => { if (b.x0 >= P0) { b.x0 += dx; b.x1 += dx; } }));
+  doors.forEach(d => { if (d.tx >= at) d.tx += add; }); cubes.forEach(c => { if (c.tx >= at) c.tx += add; });
+  if (LV.facade && LV.facade.x >= at) LV.facade.x += add;
+}
+function genSection(x0, len, gy, act){
+  const z = ACTS[act].zone, th = ACTS[act].theme, E = THEMEN[th], rnd = rngOf(act * 977 + 13), pick = a => a[Math.floor(rnd() * a.length)];
+  const pit = (a, b) => { for (let x = a; x < b; x++) for (let y = 0; y < ROWS; y++) setT(x, y, '.'); };
+  const g13 = gy === 13, end = x0 + len - 6;
+  let did = {};
+  const P = {
+    gaunt(cx){ enemy(pick(E.g), cx + 4, 2, gy); enemy(pick(E.g), cx + 10, 2, gy); if (z >= 2) enemy(pick(E.f), cx + 7, 3, gy); ringLine(cx + 2, 3, gy - 1); return 14; },
+    pit(cx){ const gap = 3 + Math.min(2, Math.floor(z / 2)); pit(cx + 2, cx + 2 + gap); ringArc(cx + 1, gap + 2, gy - 2, 30); if (z >= 3) enemy(pick(E.f), cx + 2 + Math.floor(gap / 2), 1.5, gy - 1); return gap + 4; },
+    pit2(cx){
+      if (th === 'ice') { const gap = 8 + Math.min(2, Math.floor(z / 3)); pit(cx + 1, cx + 1 + gap); for (let k = cx + 2, i = 0; k < cx + gap; k += 2, i++) cube(k, gy - 2 - (i % 2)); ringLine(cx + 2, gap - 2, gy - 5); return gap + 2; }
+      if (th === 'market') { const gap = 6; pit(cx + 1, cx + 1 + gap); tarp(cx + 1, cx + 1 + gap, gy); enemy(pick(E.f), cx + 4, 2, gy - 4); ringArc(cx + 1, gap, gy - 5, 20); return gap + 2; }
+      if (th === 'roofs') { const gap = 5; pit(cx + 1, cx + 1 + gap); elevator(cx + 2, gy - 4, 3, 0.035 + z * 0.002); enemy(pick(E.f), cx + 3, 2, gy - 3); ringLine(cx + 2, 3, gy - 6); return gap + 2; }
+      const gap = 7 + Math.min(3, Math.floor(z / 2)), half = gap / 2 - 1.5; pit(cx + 1, cx + 1 + gap);
+      plat(cx + 1 + half, gy - 2, half, 0.024 + z * 0.003); ringLine(cx + 2, gap - 2, gy - 4); return gap + 2;
+    },
+    stairs(cx){ blocks(cx, cx + 3, gy - 2, gy); blocks(cx + 3, cx + 6, gy - 4, gy); blocks(cx + 6, cx + 9, gy - 2, gy); enemy(pick(E.f), cx + 4, 2, gy - 4); ringLine(cx + 3, 3, gy - 5); if (z >= 2) enemy(pick(E.g), cx + 12, 2, gy); return 15; },
+    cones(cx){ cone(cx + 3, gy); cone(cx + 4, gy); if (z >= 3) cone(cx + 5, gy); enemy(pick(E.f), cx + 4, 2, gy - 1); ringArc(cx + 1, 7, gy - 1, 34); return 9; },
+    pillars(cx){ for (let i = 0; i < 3; i++) { blocks(cx + i * 6, cx + i * 6 + 2, gy - 2 - (i % 2), gy); enemy(pick(E.g), cx + i * 6 + 4, 1, gy); } ringLine(cx, 2, gy - 4); return 18; },
+    special(cx){
+      if (th === 'office' || (th === 'palace' && !g13)) { belt(cx, cx + 14, -1, gy); enemy('carimbo', cx + 7, 3, gy); if (g13) { dispenser(cx + 16, 'g' + cx); door(cx + 19, 'g' + cx); return 21; } return 15; }
+      if (th === 'palace') { crusher(cx + 3, 0); crusher(cx + 8, 40); enemy('carimbo', cx + 12, 2); return 15; }
+      if (th === 'ice' && g13) { vent(cx, cx + 12, -1); enemy('garrafa', cx + 6, 4); return 13; }
+      if (th === 'market' && g13) { spawner(cx + 14, -1); enemy('caixote', cx + 6, 2); return 16; }
+      enemy('carrinho', cx + 8, 6, gy); cone(cx + 13, gy); if (z >= 2) enemy(pick(E.f), cx + 13, 2, gy - 1); return 16;
+    }
+  };
+  hint(x0 + 1, 'Mais burocracia pela frente!');
+  box(x0 + 3, gy - 1, 'rings');
+  let cx = x0 + 6, last = '', cp = false;
+  const order = ['pit', 'stairs', 'cones', 'pillars', 'special', 'pit2'];
+  for (let i = order.length - 1; i > 0; i--) { const j = Math.floor(rnd() * (i + 1)); [order[i], order[j]] = [order[j], order[i]]; }
+  order.unshift('gaunt'); let n = 0;
+  while (cx < end - 20) {
+    if (!cp && cx > x0 + len * 0.45) { checkpoint(cx, gy); cp = true; cx += 4; }
+    const k = order[n++ % order.length]; cx += P[k](cx) + 3;
+  }
+  ringLine(cx, 4, gy - 1);
+}
+function hardenLevel(){
+  const z = LV.zone;
+  HARD.sp = 1.15 + z * 0.07; HARD.hop = Math.max(26, 44 - z * 3); HARD.hopV = 1.2 + z * 0.1; HARD.crUp = Math.max(66, 100 - z * 6); HARD.spawn = Math.max(78, 108 - z * 5);
+  if (!boss && goal) {
+    const sp = findSplit();
+    if (sp) { const len = G.act === 1 ? 70 : 80 + z * 8; insertCols(sp.x, len, sp.gy); genSection(sp.x, len, sp.gy, G.act); }
+  }
+  for (const e of enemies) e.vx *= HARD.sp;
+  for (const m of plats) m.sp *= 1.2;
+  if (boss) { if (boss.kind === 'monster') { boss.hp = 12; boss.maxHp = 12; } else { boss.hp = 8; boss.maxHp = 8; } }
+}
+function buildLevel(){ LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18 })[G.act](); hardenLevel(); }
 const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 'B' : (ty < 0 || ty >= ROWS) ? '.' : grid[ty][tx];
 const solid = c => c === '#' || c === 'B' || c === 'D' || c === 'C';
 
@@ -959,7 +1040,7 @@ function updateWorld(){
   for (const cr of crushers) {
     cr.t++;
     switch (cr.state) {
-      case 'up': if (cr.t > 100) { cr.state = 'warn'; cr.t = 0; } break;
+      case 'up': if (cr.t > HARD.crUp) { cr.state = 'warn'; cr.t = 0; } break;
       case 'warn': if (cr.t > 34) { cr.state = 'slam'; cr.t = 0; cr.vy = 0; } break;
       case 'slam': cr.vy += 1.2; cr.y += cr.vy; if (cr.y >= 13 * T) { cr.y = 13 * T; cr.state = 'down'; cr.t = 0; if (Math.abs(cr.x - P.x) < 300) { sfx('crash'); dust(cr.x - 14, cr.y); dust(cr.x + 14, cr.y); } } break;
       case 'down': if (cr.t > 26) { cr.state = 'rise'; cr.t = 0; } break;
@@ -968,7 +1049,7 @@ function updateWorld(){
   }
   for (const sp of spawners) {
     if (Math.abs(sp.x - P.x) > 380) continue;
-    if (++sp.t >= 110) { sp.t = 0; rollers.push({ x: sp.x + sp.dir * 14, y: sp.y - 8, vx: sp.dir * 2.2, vy: 0, life: 600, rot: 0, alive: true }); }
+    if (++sp.t >= HARD.spawn) { sp.t = 0; rollers.push({ x: sp.x + sp.dir * 14, y: sp.y - 8, vx: sp.dir * 2.2, vy: 0, life: 600, rot: 0, alive: true }); }
   }
   for (const r of rollers) {
     if (!r.alive) continue;
@@ -986,7 +1067,7 @@ function updateWorld(){
     if (Math.abs(e.x - P.x) > 380) continue;
     if (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato') {
       e.hvy = (e.hvy || 0) + 0.28; e.hy = Math.min(0, (e.hy || 0) + e.hvy);
-      if (e.hy === 0) { e.hvy = 0; e.land = (e.land || 0) + 1; if (e.land > 45) { e.land = 0; e.hvy = -5; e.vx = (P.x < e.x ? -1 : 1) * 1.1; sfx('jump'); } }
+      if (e.hy === 0) { e.hvy = 0; e.land = (e.land || 0) + 1; if (e.land > HARD.hop) { e.land = 0; e.hvy = -5; e.vx = (P.x < e.x ? -1 : 1) * HARD.hopV; sfx('jump'); } }
       else { e.x = Math.max(e.x0, Math.min(e.x1, e.x + e.vx)); }
       e.y = e.baseY + e.hy; continue;
     }
@@ -1013,7 +1094,7 @@ function bossLockCheck(){
   }
 }
 function throwCrates(){
-  const b = boss, n = b.hp <= 3 ? 2 : 1;
+  const b = boss, n = b.hp <= (b.maxHp || 6) / 2 ? 2 : 1;
   for (let i = 0; i < n; i++) {
     const tgt = P.x + i * (P.x < b.x ? -48 : 48), sx = b.x + b.dir * 26, frames = 58;
     b.crates.push({ kind: 'stack', g: 0.2, x: sx, y: b.y - 34 - b.forks * 20, vx: Math.max(-4, Math.min(4, (tgt - sx) / frames)), vy: -0.5 * 0.2 * frames - 1, rot: 0, alive: true });
@@ -1070,7 +1151,7 @@ function dropBoleto(b){
   beep(900, 0.05, 'square', 0.04);
 }
 function updateBalloon(b){
-  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= 3, hoverY = 13 * T - 64;
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= (b.maxHp || 6) / 2, hoverY = 13 * T - 64;
   switch (b.state) {
     case 'enter': b.y += (hoverY - b.y) * 0.04; if (Math.abs(b.y - hoverY) < 1) { b.y = hoverY; b.state = 'float'; b.t = 0; } break;
     case 'float':
@@ -1091,7 +1172,7 @@ function throwTomato(b){
   sfx('throw');
 }
 function updateTruck(b){
-  const L0 = b.a0 * T + 34, R0 = b.a1 * T - 34, hard = b.hp <= 3, mid = (L0 + R0) / 2;
+  const L0 = b.a0 * T + 34, R0 = b.a1 * T - 34, hard = b.hp <= (b.maxHp || 6) / 2, mid = (L0 + R0) / 2;
   switch (b.state) {
     case 'enter':
       b.dir = -1; b.vx = -4; b.x += b.vx;
@@ -1127,7 +1208,7 @@ function throwIce(b){
   sfx('throw');
 }
 function updateFreezer(b){
-  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= 3;
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= (b.maxHp || 6) / 2;
   switch (b.state) {
     case 'enter':
       b.vy += 0.35; b.y += b.vy;
@@ -1155,7 +1236,7 @@ function updateFreezer(b){
   }
 }
 function updatePanel(b){
-  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= 3, hoverY = 13 * T - 72;
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= (b.maxHp || 6) / 2, hoverY = 13 * T - 72;
   if (b.t % 50 === 0) b.num++;
   switch (b.state) {
     case 'enter': b.y += (hoverY - b.y) * 0.05; if (Math.abs(b.y - hoverY) < 1) { b.y = hoverY; b.state = 'hover'; b.t = 0; } break;
@@ -1177,7 +1258,7 @@ function updatePanel(b){
 function updateBoss(){
   const b = boss; if (!b) return;
   b.t++; if (b.inv > 0) b.inv--;
-  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, sp = b.hp <= 3 ? 1.6 : 1.05;
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, sp = b.hp <= (b.maxHp || 6) / 2 ? 1.6 : 1.05;
   if (b.kind === 'panel' && b.state !== 'dead') updatePanel(b);
   else if (b.kind === 'freezer' && b.state !== 'dead') updateFreezer(b);
   else if (b.kind === 'truck' && b.state !== 'dead') updateTruck(b);
@@ -1194,7 +1275,7 @@ function updateBoss(){
       break; }
     case 'aim':
       b.dir = P.x < b.x ? -1 : 1; b.forks = Math.min(1, b.t / 28);
-      if (b.t >= (b.hp <= 3 ? 30 : 42)) { throwCrates(); b.state = 'cool'; b.t = 0; }
+      if (b.t >= (b.hp <= (b.maxHp || 6) / 2 ? 30 : 42)) { throwCrates(); b.state = 'cool'; b.t = 0; }
       break;
     case 'cool':
       b.forks = Math.max(0, 1 - b.t / 18);
@@ -1242,7 +1323,7 @@ function bossInteract(pb, prevY){
   if ((P.ball || stomp) && (!pan || b.state === 'stuck')) {
     if (b.inv === 0) {
       b.hp--; b.inv = 50; G.score += 100; sfx('bosshit'); buzz(35); burst(P.x, bb.y0, 0xffffff);
-      if (mon && b.hp > 0 && b.hp % 3 === 0) { b.phase++; b.state = 'roar'; b.t = 0; b.inv = 70; pop(b.x, b.y - 90, `Etapa ${b.phase} de 3!`, 120, 0.2); }
+      if (mon && b.hp > 0 && b.hp % 4 === 0) { b.phase++; b.state = 'roar'; b.t = 0; b.inv = 70; pop(b.x, b.y - 90, `Etapa ${b.phase} de 3!`, 120, 0.2); }
       if (b.hp <= 0) {
         b.state = 'dead'; b.t = 0; G.score += 1000; pop(b.x, b.y - 50, '1000'); sfx('win');
         b.crates.forEach(c => c.alive = false); P.state = 'goal'; G.goalT = 0; P.vx = 0;
@@ -2333,7 +2414,7 @@ function finish(){
   G.state = 'done'; $('touch').classList.add('hidden'); $('bossHud').classList.add('hidden');
   pops.forEach(q => q.life = Math.min(q.life, 1));
   const secs = Math.floor(G.frames / 60);
-  const tb = secs < 45 ? 10000 : secs < 60 ? 5000 : secs < 90 ? 3000 : secs < 120 ? 2000 : secs < 180 ? 1000 : 0;
+  const tb = secs < 70 ? 10000 : secs < 95 ? 5000 : secs < 130 ? 3000 : secs < 170 ? 2000 : secs < 240 ? 1000 : 0;
   const rb = G.ringsN * 100, base = G.score, total = base + tb + rb; G.score = total;
   const tm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
   const actPts = total - (G.actStartScore || 0), rkey = 'motoca-rec-' + G.act; let rec = null;
