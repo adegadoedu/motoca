@@ -193,15 +193,19 @@ const touchHeld = { l:0, r:0, j:0 };
 function readInput(){ inp.l = keys.l || touchHeld.l ? 1 : 0; inp.r = keys.r || touchHeld.r ? 1 : 0; inp.j = keys.j || touchHeld.j ? 1 : 0; }
 
 /* ---------- Fase (lógica) ---------- */
-let grid, rings, boxes, enemies, springs, cones, checks, plats, loose, pads, selo, goal, boss, npc, LV;
+let grid, rings, boxes, enemies, springs, cones, checks, plats, loose, pads, belts, buttons, doors, selo, goal, boss, npc, LV;
+const DOCNAME = { 1: 'CNPJ', 2: 'Alvará' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2' };
 const ACTS = {
-  1: { name:'Rua da Adega', sub:'Zona 1 · Ato 1', sky:'day', facade:{ x:245.5, kind:'adega' }, sign:true },
-  2: { name:'Rua da Adega', sub:'Zona 1 · Ato 2', sky:'sunset', facade:null },
-  3: { name:'Rua da Adega', sub:'Zona 1 · Ato 3', sky:'dusk', facade:{ x:64, kind:'repart' } }
+  1: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 1', sky:'day', facade:{ x:245.5, kind:'adega' }, sign:true },
+  2: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 2', sky:'sunset', facade:null },
+  3: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 3', sky:'dusk', facade:{ x:64, kind:'repart' } },
+  4: { zone:2, theme:'office', name:'A Repartição', sub:'Zona 2 · Ato 1', sky:'office', facade:null },
+  5: { zone:2, theme:'office', name:'A Repartição', sub:'Zona 2 · Ato 2', sky:'office', facade:null },
+  6: { zone:2, theme:'office', name:'A Repartição', sub:'Zona 2 · Ato 3', sky:'office', facade:null, bossSign:true }
 };
 function newGrid(cols){
   COLS = cols; grid = Array.from({ length: ROWS }, () => Array(COLS).fill('.'));
-  rings = []; boxes = []; enemies = []; springs = []; cones = []; checks = []; plats = []; loose = []; pads = [];
+  rings = []; boxes = []; enemies = []; springs = []; cones = []; checks = []; plats = []; loose = []; pads = []; belts = []; buttons = []; doors = [];
   selo = null; goal = null; boss = null; npc = null;
 }
 const setT = (x, y, c) => { if (x >= 0 && x < COLS && y >= 0 && y < ROWS) grid[y][x] = c; };
@@ -217,6 +221,10 @@ const spring = (tx, ty=13, pow=-9.6) => springs.push({ x: tx * T + 8, y: ty * T,
 const cone = (tx, ty=13) => cones.push({ x: tx * T + 8, y: ty * T });
 const plat = (tx, ty, range, speed=0.02) => plats.push({ x0: tx * T, x: tx * T, y: ty * T, w: 48, range: range * T, sp: speed, t: 0, dx: 0 });
 const pad = (tx, ty=13) => pads.push({ x: tx * T + 8, y: ty * T, cd: 0 });
+const elevator = (tx, ty, range, speed=0.03) => plats.push({ x0: tx * T, x: tx * T, y0: ty * T, y: ty * T, w: 48, range: range * T, sp: speed, t: 0, dx: 0, dy: 0, axis: 'y' });
+const belt = (tx0, tx1, dir, ty=13) => belts.push({ x0: tx0 * T, x1: tx1 * T, y: ty * T, dir });
+const dispenser = (tx, id) => buttons.push({ x: tx * T + 8, y: 13 * T, id, used: false });
+const door = (tx, id, ty0=0, ty1=13) => { doors.push({ tx, ty0, ty1, id, open: false, lift: 0 }); for (let y = ty0; y < ty1; y++) setT(tx, y, 'D'); };
 const checkpoint = (tx) => checks.push({ x: tx * T + 8, y: 13 * T, on:false });
 
 function level1(){
@@ -296,7 +304,7 @@ function level3(){
   newGrid(76);
   ground(0, 76);
   ringLine(6, 8, 12);
-  npc = { x: 12 * T + 8, y: 13 * T, said: false };
+  npc = { x: 12 * T + 8, y: 13 * T, said: false, text: 'Zé: o Doutor Carimbo travou minha bodega também!' };
   enemy('cachorro', 19, 2);
   awning(22, 27, 10); ringLine(22, 5, 9);
   box(30, 12, 'shield');
@@ -307,14 +315,88 @@ function level3(){
   blocks(72, 76, 0, 13);
   boss = { a0:56, a1:72, x:(72 - 3) * T + 8, y:13 * T - 320, vy:0, hp:6, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0 };
 }
-function buildLevel(){ LV = ACTS[G.act]; ({ 1: level1, 2: level2, 3: level3 })[G.act](); }
+function level4(){
+  newGrid(250);
+  ground(0, 76);
+  ringLine(4, 4, 12);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: tô nessa fila desde terça-feira!' };
+  enemy('cachorro', 17, 2);
+  belt(21, 31, 1); ringLine(22, 8, 11);
+  enemy('carimbo', 35, 3);
+  dispenser(39, 'a'); door(43, 'a');
+  belt(47, 57, -1); enemy('pombo', 52, 3); ringLine(47, 5, 12);
+  blocks(60, 63, 11, 13); ringLine(60, 3, 10);
+  spring(67); ringCol(67, 3, 7);
+  blocks(71, 111, 5, 6); ringLine(72, 16, 4, 2);
+  selo = { x: 108 * T + 8, y: 5 * T - 22, got: false };
+  plat(77, 11, 1.5, 0.03); ringLine(78, 3, 9);
+  ground(84, 170);
+  enemy('carimbo', 88, 2);
+  dispenser(91, 'b'); door(96, 'b', 6);
+  checkpoint(100);
+  enemy('carrinho', 105, 3); box(108, 12, 'rings');
+  elevator(116, 8, 4, 0.025); blocks(119, 123, 4, 13); ringLine(119, 4, 3);
+  belt(127, 145, 1); ringArc(128, 8, 11, 36); enemy('carimbo', 136, 3); enemy('carimbo', 150, 3);
+  awning(152, 158, 10); box(155, 9, 'shield');
+  plat(171, 11, 1.5, 0.03); ringLine(172, 3, 9);
+  ground(178, 250);
+  dispenser(184, 'c'); door(188, 'c');
+  checkpoint(192);
+  enemy('carrinho', 204, 3); enemy('pombo', 212, 3);
+  belt(216, 228, 1); ringLine(217, 10, 12);
+  goal = { x: 236 * T + 8, y: 13 * T, done: false };
+  blocks(246, 250, 0, 13);
+}
+function level5(){
+  newGrid(240);
+  ground(0, 56);
+  ringLine(4, 5, 12);
+  enemy('pombo', 14, 3);
+  belt(18, 30, -1); ringLine(19, 6, 12); enemy('carimbo', 26, 2);
+  elevator(32, 8, 4, 0.03); blocks(35, 39, 5, 13); ringLine(35, 4, 4);
+  dispenser(43, 'a'); door(47, 'a');
+  elevator(57, 9, 2, 0.035); ringLine(58, 2, 6);
+  elevator(62, 8, 2.5, 0.04); ringLine(63, 2, 5);
+  elevator(67, 9, 2, 0.035);
+  ground(72, 146);
+  checkpoint(75);
+  enemy('carrinho', 82, 3); enemy('cachorro', 88, 2);
+  awning(92, 96, 10); awning(97, 101, 8); ringLine(97, 4, 7);
+  spring(104); ringCol(104, 3, 7);
+  blocks(108, 140, 4, 5); ringLine(109, 15, 3, 2); box(138, 3, 'life');
+  belt(108, 124, 1); enemy('carimbo', 116, 3); ringLine(110, 6, 12);
+  belt(126, 138, -1); enemy('pombo', 132, 3);
+  ground(151, 240);
+  enemy('carimbo', 156, 2); enemy('carimbo', 162, 2);
+  dispenser(168, 'b'); door(172, 'b');
+  checkpoint(176);
+  belt(182, 196, 1); ringArc(183, 10, 11, 40);
+  spring(198); blocks(201, 205, 8, 13); ringLine(201, 4, 7);
+  enemy('pombo', 210, 3); enemy('carrinho', 216, 3);
+  goal = { x: 226 * T + 8, y: 13 * T, done: false };
+  blocks(236, 240, 0, 13);
+}
+function level6(){
+  newGrid(76);
+  ground(0, 76);
+  ringLine(5, 6, 12);
+  belt(12, 20, 1); ringLine(13, 6, 11);
+  enemy('carimbo', 24, 3);
+  box(30, 12, 'shield');
+  enemy('pombo', 35, 3);
+  checkpoint(44);
+  ringLine(46, 4, 12); box(51, 12, 'rings');
+  blocks(72, 76, 0, 13);
+  boss = { kind:'panel', a0:56, a1:72, x: 64 * T + 8, y: 13 * T - 300, vy:0, hp:6, dir:1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, num:41 };
+}
+function buildLevel(){ LV = ACTS[G.act]; ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6 })[G.act](); }
 const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 'B' : (ty < 0 || ty >= ROWS) ? '.' : grid[ty][tx];
-const solid = c => c === '#' || c === 'B';
+const solid = c => c === '#' || c === 'B' || c === 'D';
 
 /* ---------- Jogador ---------- */
 const P = { x:0, y:0, vx:0, vy:0, w:12, h:22, onGround:false, ball:false, face:1, state:'play', inv:0, hurtT:0, ph:0,
   shield:false, shoes:0, onPlat:null, springT:0, deathT:0 };
-const G = { state:'title', t:0, score:0, ringsN:0, lives:3, frames:0, check:null, goalT:0, nextLifeAt:100, cardT:0, paused:false, act:1, lock:false, seloGot:false };
+const G = { state:'title', t:0, score:0, ringsN:0, lives:3, frames:0, check:null, goalT:0, nextLifeAt:100, cardT:0, paused:false, act:1, lock:false, docs:{} };
 
 function spawn(){
   const c = G.check;
@@ -359,7 +441,8 @@ function updatePlayer(){
   if (P.shoes > 0) P.shoes--;
   if (P.state === 'dead') { P.vy += 0.22; P.y += P.vy; if (++P.deathT > 110) afterDeath(); return; }
   if (P.state === 'goal') { P.vx *= 0.94; moveX(); P.vy = Math.min(7, P.vy + 0.24); moveY(); P.ph += Math.abs(P.vx) * 0.12; return; }
-  for (const m of plats) if (P.onPlat === m) P.x += m.dx;
+  for (const m of plats) if (P.onPlat === m) { P.x += m.dx; P.y += m.dy || 0; }
+  if (P.onGround) for (const bt of belts) if (Math.abs(P.y - bt.y) < 1 && P.x > bt.x0 && P.x < bt.x1) P.x += bt.dir * 1.3;
   const top = P.shoes > 0 ? 4.0 : 3.0, slow = Math.abs(P.vx) < 1.8, acc = slow ? 0.3 : (P.shoes > 0 ? 0.1 : 0.07), dec = 0.6, frc = 0.3, air = 0.13;
   const jumpPress = inp.j && !jPrev;
   if (P.hurtT > 0) P.hurtT--;
@@ -415,7 +498,7 @@ function interact(prevY){
   const pb = { x0: P.x - P.w / 2, x1: P.x + P.w / 2, y0: P.y - P.h, y1: P.y };
   for (const r of rings) if (r.alive && Math.abs(r.x - P.x) < 12 && r.y > pb.y0 - 5 && r.y < pb.y1 + 5) { r.alive = false; addRing(); spark(r.x, r.y); }
   for (const r of loose) if (r.wait <= 0 && r.life > 0 && Math.abs(r.x - P.x) < 12 && r.y > pb.y0 - 5 && r.y < pb.y1 + 5) { r.life = 0; addRing(); }
-  if (selo && !selo.got && Math.abs(selo.x - P.x) < 16 && Math.abs(selo.y - (P.y - 11)) < 20) { selo.got = true; G.seloGot = true; saveFlag('motoca-selo1', 1); G.score += 5000; sfx('selo'); pop(selo.x, selo.y - 10, 'CNPJ conquistado!', 120, 0.25); for (let i = 0; i < 4; i++) spark(selo.x, selo.y); }
+  if (selo && !selo.got && Math.abs(selo.x - P.x) < 16 && Math.abs(selo.y - (P.y - 11)) < 20) { selo.got = true; G.docs[LV.zone] = true; saveFlag(DOCKEY[LV.zone], 1); G.score += 5000; sfx('selo'); pop(selo.x, selo.y - 10, DOCNAME[LV.zone] + ' conquistado!', 120, 0.25); for (let i = 0; i < 4; i++) spark(selo.x, selo.y); }
   for (const b of boxes) {
     if (!b.alive) continue;
     const bb = { x0: b.x - 8, x1: b.x + 8, y0: b.y - 16, y1: b.y };
@@ -429,7 +512,7 @@ function interact(prevY){
   }
   for (const e of enemies) {
     if (!e.alive) continue;
-    const h = e.type === 'carrinho' ? 15 : e.type === 'cachorro' ? 13 : 10;
+    const h = e.type === 'carrinho' ? 15 : e.type === 'cachorro' ? 13 : e.type === 'carimbo' ? 14 : 10;
     const eb = { x0: e.x - 8, x1: e.x + 8, y0: e.y - h, y1: e.y };
     if (!overlap(pb, eb)) continue;
     if (P.ball || (P.vy > 0 && prevY <= eb.y0 + 6)) {
@@ -446,7 +529,11 @@ function interact(prevY){
     pd.cd = 20; P.vx = 5.6; P.face = 1;
   }
   bossInteract(pb, prevY);
-  if (npc && !npc.said && P.x > npc.x - 70) { npc.said = true; pop(npc.x, npc.y - 64, 'Zé: o Doutor Carimbo travou minha bodega também!', 200, 0.1); }
+  for (const bn of buttons) if (!bn.used && Math.abs(bn.x - P.x) < 14 && P.y > bn.y - 34) {
+    bn.used = true; G.score += 50; sfx('check'); pop(bn.x, bn.y - 52, 'Senha retirada!', 90, 0.3);
+    for (const d of doors) if (d.id === bn.id && !d.open) { d.open = true; for (let y = d.ty0; y < d.ty1; y++) setT(d.tx, y, '.'); }
+  }
+  if (npc && !npc.said && P.x > npc.x - 70) { npc.said = true; pop(npc.x, npc.y - 64, npc.text, 200, 0.1); }
   for (const k of checks) if (!k.on && Math.abs(k.x - P.x) < 12) { k.on = true; G.check = { x:k.x, y:k.y, time:G.frames }; sfx('check'); }
   if (goal && !goal.done && P.x > goal.x) { goal.done = true; P.state = 'goal'; G.goalT = 0; sfx('goal'); }
 }
@@ -459,10 +546,16 @@ function giveItem(item, x, y){
 function updateWorld(){
   for (const pd of pads) if (pd.cd > 0) pd.cd--;
   updateBoss();
-  for (const m of plats) { m.t += m.sp; const nx = m.x0 + Math.sin(m.t) * m.range; m.dx = nx - m.x; m.x = nx; }
+  for (const m of plats) { m.t += m.sp; if (m.axis === 'y') { const ny = m.y0 + Math.sin(m.t) * m.range; m.dy = ny - m.y; m.y = ny; m.dx = 0; } else { const nx = m.x0 + Math.sin(m.t) * m.range; m.dx = nx - m.x; m.x = nx; m.dy = 0; } }
   for (const e of enemies) {
     if (!e.alive) continue; e.t++;
     if (Math.abs(e.x - P.x) > 380) continue;
+    if (e.type === 'carimbo') {
+      e.hvy = (e.hvy || 0) + 0.28; e.hy = Math.min(0, (e.hy || 0) + e.hvy);
+      if (e.hy === 0) { e.hvy = 0; e.land = (e.land || 0) + 1; if (e.land > 45) { e.land = 0; e.hvy = -5; e.vx = (P.x < e.x ? -1 : 1) * 1.1; sfx('jump'); } }
+      else { e.x = Math.max(e.x0, Math.min(e.x1, e.x + e.vx)); }
+      e.y = e.baseY + e.hy; continue;
+    }
     e.x += e.vx;
     if (e.x < e.x0) { e.x = e.x0; e.vx = Math.abs(e.vx); } else if (e.x > e.x1) { e.x = e.x1; e.vx = -Math.abs(e.vx); }
     if (e.type === 'pombo') e.y = e.baseY - 18 - Math.round(Math.sin(e.t * 0.06) * 10);
@@ -482,23 +575,48 @@ function bossLockCheck(){
   if (!boss || G.lock || P.state !== 'play') return;
   if (P.x > (boss.a0 + 3) * T) {
     G.lock = true; for (let y = 0; y < 13; y++) grid[y][boss.a0 - 1] = 'B';
-    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, 'Pule em cima do Doutor Carimbo!', 150, 0.15);
+    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
   }
 }
 function throwCrates(){
   const b = boss, n = b.hp <= 3 ? 2 : 1;
   for (let i = 0; i < n; i++) {
     const tgt = P.x + i * (P.x < b.x ? -48 : 48), sx = b.x + b.dir * 26, frames = 58;
-    b.crates.push({ x: sx, y: b.y - 34 - b.forks * 20, vx: Math.max(-4, Math.min(4, (tgt - sx) / frames)), vy: -0.5 * 0.2 * frames - 1, rot: 0, alive: true });
+    b.crates.push({ kind: 'stack', g: 0.2, x: sx, y: b.y - 34 - b.forks * 20, vx: Math.max(-4, Math.min(4, (tgt - sx) / frames)), vy: -0.5 * 0.2 * frames - 1, rot: 0, alive: true });
   }
   sfx('throw');
 }
 SFX.throw = () => { beep(500, 0.12, 'triangle', 0.08, 250); };
+function dropTicket(b){
+  b.crates.push({ kind: 'ticket', g: 0.05, max: 2.0, x: b.x + (Math.random() - 0.5) * 44, y: b.y - 6, vx: (Math.random() - 0.5) * 0.5, vy: 0.4, rot: Math.random() * 6, alive: true });
+  beep(1200, 0.05, 'square', 0.04);
+}
+function updatePanel(b){
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= 3, hoverY = 13 * T - 72;
+  if (b.t % 50 === 0) b.num++;
+  switch (b.state) {
+    case 'enter': b.y += (hoverY - b.y) * 0.05; if (Math.abs(b.y - hoverY) < 1) { b.y = hoverY; b.state = 'hover'; b.t = 0; } break;
+    case 'hover': {
+      const tx = Math.max(L, Math.min(R, P.x)); b.x += Math.sign(tx - b.x) * Math.min(Math.abs(tx - b.x), hard ? 1.7 : 1.2);
+      b.y = hoverY + Math.sin(b.t * 0.08) * 3;
+      if (b.t % (hard ? 34 : 50) === 25) dropTicket(b);
+      if (b.t > (hard ? 120 : 170)) { b.state = 'warn'; b.t = 0; sfx('alarm'); }
+      break; }
+    case 'warn': b.y = hoverY - 6 + Math.sin(b.t * 1.3) * 2; if (b.t > 36) { b.state = 'slam'; b.t = 0; b.vy = 0; } break;
+    case 'slam':
+      b.vy += 0.7; b.y += b.vy;
+      if (b.y >= 13 * T) { b.y = 13 * T; b.state = 'stuck'; b.t = 0; sfx('crash'); dust(b.x - 26, b.y); dust(b.x + 26, b.y); for (let i = 0; i < 6; i++) addPart(b.x, b.y - 10, (Math.random() - 0.5) * 5, -2 - Math.random() * 2, 0.12, 40, 0xf4f0e6, 1.6); }
+      break;
+    case 'stuck': if (b.t > (hard ? 62 : 82)) { b.state = 'rise'; b.t = 0; } break;
+    case 'rise': b.y -= 1.6; if (b.y <= hoverY) { b.y = hoverY; b.state = 'hover'; b.t = 0; } break;
+  }
+}
 function updateBoss(){
   const b = boss; if (!b) return;
   b.t++; if (b.inv > 0) b.inv--;
   const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, sp = b.hp <= 3 ? 1.6 : 1.05;
-  switch (b.state) {
+  if (b.kind === 'panel' && b.state !== 'dead') updatePanel(b);
+  else switch (b.state) {
     case 'enter':
       b.vy += 0.35; b.y += b.vy;
       if (b.y >= 13 * T) { b.y = 13 * T; b.vy = 0; b.state = 'aim'; b.t = 0; sfx('crash'); dust(b.x - 20, b.y); dust(b.x + 20, b.y); }
@@ -516,31 +634,36 @@ function updateBoss(){
       if (b.t >= 26) { b.target = Math.abs(b.x - L) < 4 ? R : L; b.state = 'move'; b.t = 0; }
       break;
     case 'dead':
+      if (b.kind === 'panel' && b.y < 13 * T) { b.vy = (b.vy || 0) + 0.4; b.y = Math.min(13 * T, b.y + b.vy); }
       if (b.t < 120 && b.t % 5 === 0) burst(b.x + (Math.random() - 0.5) * 44, b.y - 10 - Math.random() * 30, Math.random() < 0.5 ? 0x777777 : 0xffb84a);
       if (b.t < 120 && b.t % 15 === 0) sfx('pop');
       if (b.t > 50) { b.zeX += 2.4; b.zeY = Math.abs(Math.sin(b.t * 0.22)) * 10 + (b.t < 70 ? (b.t - 50) * 1.2 : 0); }
-      if (b.t === 120) { pop(b.x, b.y - 70, 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
+      if (b.t === 120) { pop(b.x, b.y - 70, b.kind === 'panel' ? 'Senha chamada: a sua!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
       break;
   }
   for (const c of b.crates) {
     if (!c.alive) continue;
-    c.vy += 0.2; c.x += c.vx; c.y += c.vy; c.rot += 0.12 * Math.sign(c.vx || 1);
-    if (c.vy > 0 && c.y >= 13 * T - 8) { c.alive = false; burst(c.x, c.y, 0xf4f0e6); sfx('crash'); continue; }
-    if (P.state === 'play' && Math.abs(c.x - P.x) < 15 && c.y > P.y - P.h - 9 && c.y < P.y + 6) {
+    const tk = c.kind === 'ticket';
+    c.vy += c.g || 0.2; if (c.max) c.vy = Math.min(c.vy, c.max);
+    c.x += c.vx + (tk ? Math.sin(b.t * 0.1 + c.rot) * 0.6 : 0); c.y += c.vy; c.rot += tk ? 0.05 : 0.12 * Math.sign(c.vx || 1);
+    if (c.vy > 0 && c.y >= 13 * T - (tk ? 2 : 8)) { c.alive = false; if (tk) addPart(c.x, c.y - 2, 0, -0.5, 0, 14, 0xffffff, 1); else { burst(c.x, c.y, 0xf4f0e6); sfx('crash'); } continue; }
+    if (P.state === 'play' && Math.abs(c.x - P.x) < (tk ? 11 : 15) && c.y > P.y - P.h - (tk ? 4 : 9) && c.y < P.y + 6) {
       if (P.ball) { c.alive = false; burst(c.x, c.y, 0xf4f0e6); sfx('pop'); G.score += 10; P.vy = Math.min(P.vy, -4); }
       else hurt(c.x);
     }
   }
-  if (b.crates.length > 12) b.crates = b.crates.filter(c => c.alive);
+  if (b.crates.length > 16) b.crates = b.crates.filter(c => c.alive);
 }
 function bossInteract(pb, prevY){
   bossLockCheck();
   const b = boss;
   if (!b || b.state === 'idle' || b.state === 'enter' || b.state === 'dead' || P.state !== 'play') return;
-  const bb = { x0: b.x - 22, x1: b.x + 22, y0: b.y - 36, y1: b.y };
+  const pan = b.kind === 'panel';
+  const bb = pan ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 46, y1: b.y } : { x0: b.x - 22, x1: b.x + 22, y0: b.y - 36, y1: b.y };
   if (!overlap(pb, bb)) return;
   const stomp = P.vy > 0 && prevY <= bb.y0 + 8;
-  if (P.ball || stomp) {
+  if (pan && b.state === 'stuck' && !P.ball && !stomp) { P.x = P.x < b.x ? bb.x0 - P.w / 2 - 0.5 : bb.x1 + P.w / 2 + 0.5; P.vx = 0; return; }
+  if ((P.ball || stomp) && (!pan || b.state === 'stuck')) {
     if (b.inv === 0) {
       b.hp--; b.inv = 50; G.score += 100; sfx('bosshit'); burst(P.x, bb.y0, 0xffffff);
       if (b.hp <= 0) {
@@ -590,7 +713,8 @@ const skyTex = stops => ctex(2, 256, (c, w, h) => { const g = c.createLinearGrad
 const SKIES = {
   day: { tex: scene.background, fog: 0xb9d6f4, sun: 0xfff1d8, si: 0.78, hemi: 0xdcecff, hi: 0.72 },
   sunset: { tex: skyTex([[0, '#3b2a78'], [0.45, '#c8608a'], [0.75, '#ffa060'], [1, '#ffd08a']]), fog: 0xe8a888, sun: 0xffb070, si: 0.85, hemi: 0xffd8c8, hi: 0.6 },
-  dusk: { tex: skyTex([[0, '#1d1a4a'], [0.5, '#5a3a8a'], [0.8, '#c86a8a'], [1, '#f0a070']]), fog: 0x8a78b0, sun: 0xd8c0ff, si: 0.62, hemi: 0xc8c0ff, hi: 0.62 }
+  dusk: { tex: skyTex([[0, '#1d1a4a'], [0.5, '#5a3a8a'], [0.8, '#c86a8a'], [1, '#f0a070']]), fog: 0x8a78b0, sun: 0xd8c0ff, si: 0.62, hemi: 0xc8c0ff, hi: 0.62 },
+  office: { tex: skyTex([[0, '#b8ae98'], [1, '#e2d8c0']]), fog: 0xe0d6be, sun: 0xffffff, si: 0.62, hemi: 0xfff6e6, hi: 0.9 }
 };
 function applySky(k){ const S = SKIES[k] || SKIES.day; scene.background = S.tex; scene.fog.color.setHex(S.fog); sun.color.setHex(S.sun); sun.intensity = S.si; hemi.color.setHex(S.hemi); hemi.intensity = S.hi; }
 
@@ -634,6 +758,52 @@ function makeTextures(){
     c.fillStyle = '#d7263d'; c.font = '800 21px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Volte', w / 2, 23); c.fillText('amanhã', w / 2, 44); });
   TX.paper = ctex(64, 64, (c) => { c.fillStyle = '#f4f0e6'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#c8c2b4'; for (let y = 4; y < 64; y += 6) c.fillRect(0, y, 64, 1);
     c.fillStyle = '#d7263d'; c.fillRect(0, 26, 64, 10); c.fillStyle = '#fff'; c.font = '800 9px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('PROCESSO', 32, 31); });
+  const docTex = (label) => ctex(96, 128, (c, w, h) => { c.fillStyle = '#fffaf0'; c.fillRect(0, 0, w, h); c.strokeStyle = '#1a0b12'; c.lineWidth = 6; c.strokeRect(3, 3, w - 6, h - 6);
+    c.fillStyle = '#1a0b12'; c.font = `800 ${label.length > 4 ? 20 : 26}px "Baloo 2", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(label, w / 2, 26);
+    c.fillStyle = '#9aa0aa'; for (let y = 46; y < 86; y += 9) c.fillRect(14, y, w - 28, 3);
+    c.fillStyle = '#ffb81c'; c.beginPath(); c.arc(w / 2, 104, 15, 0, Math.PI * 2); c.fill(); c.fillStyle = '#d7263d'; c.fillRect(w / 2 - 4, 112, 8, 14); });
+  TX.docs = { 1: TX.doc, 2: docTex('ALVARÁ') };
+  TX.offFloor = ctex(64, 64, (c) => { c.fillStyle = '#d8d6d0'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#c8c6c0'; c.fillRect(0, 0, 32, 32); c.fillRect(32, 32, 32, 32);
+    c.fillStyle = '#a8a6a0'; c.fillRect(0, 31, 64, 2); c.fillRect(31, 0, 2, 64); c.fillStyle = 'rgba(80,80,90,.25)'; for (let i = 0; i < 40; i++) c.fillRect((i * 37) % 64, (i * 23) % 64, 2, 2); }, true);
+  TX.offEdge = ctex(64, 16, (c) => { c.fillStyle = '#5a5f6a'; c.fillRect(0, 0, 64, 16); c.fillStyle = '#8a8f9a'; c.fillRect(0, 0, 64, 4); }, true);
+  TX.offBase = ctex(64, 64, (c) => { c.fillStyle = '#8a8580'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#6a6560';
+    for (let y = 0; y < 64; y += 16) { c.fillRect(0, y, 64, 2); const o = (y / 16) % 2 ? 16 : 0; for (let x = o; x < 80; x += 32) c.fillRect(x, y, 2, 16); } }, true);
+  TX.offBox = ctex(64, 64, (c) => { c.fillStyle = '#c8a878'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#a8885a'; c.fillRect(0, 0, 64, 8); c.fillRect(0, 0, 3, 64); c.fillRect(61, 0, 3, 64); c.fillRect(0, 61, 64, 3);
+    c.fillStyle = '#fffaf0'; c.fillRect(12, 18, 40, 18); c.fillStyle = '#3a4252'; c.font = '800 10px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('ARQUIVO', 32, 28);
+    c.fillStyle = '#6a4a2a'; c.beginPath(); c.ellipse(32, 48, 10, 4, 0, 0, Math.PI * 2); c.fill(); });
+  TX.offShelf = ctex(32, 8, (c) => { c.fillStyle = '#7a8494'; c.fillRect(0, 0, 32, 8); c.fillStyle = '#9aa4b4'; c.fillRect(0, 0, 16, 8); }, true);
+  TX.lift = ctex(64, 64, (c) => { c.fillStyle = '#6a707a'; c.fillRect(0, 0, 64, 64); for (let i = -64; i < 64; i += 16) { c.fillStyle = '#ffd23f'; c.beginPath(); c.moveTo(i, 0); c.lineTo(i + 8, 0); c.lineTo(i + 72, 64); c.lineTo(i + 64, 64); c.fill(); } }, true);
+  const beltTex = (dir) => ctex(64, 32, (c) => { c.fillStyle = '#2a2a30'; c.fillRect(0, 0, 64, 32); c.fillStyle = '#ffd23f';
+    for (const x0 of [8, 40]) { c.beginPath(); if (dir > 0) { c.moveTo(x0, 6); c.lineTo(x0 + 12, 16); c.lineTo(x0, 26); c.lineTo(x0 + 6, 26); c.lineTo(x0 + 18, 16); c.lineTo(x0 + 6, 6); }
+      else { c.moveTo(x0 + 18, 6); c.lineTo(x0 + 6, 16); c.lineTo(x0 + 18, 26); c.lineTo(x0 + 12, 26); c.lineTo(x0, 16); c.lineTo(x0 + 12, 6); } c.closePath(); c.fill(); } }, true);
+  TX.beltR = beltTex(1); TX.beltL = beltTex(-1);
+  TX.doorSign = ctex(128, 64, (c, w, h) => { c.fillStyle = '#1a0b12'; c.fillRect(0, 0, w, h); c.fillStyle = '#ff3d3d'; c.font = '800 22px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('AGUARDE', w / 2, 24);
+    c.fillStyle = '#ffd23f'; c.font = '700 13px "Baloo 2", sans-serif'; c.fillText('pegue sua senha', w / 2, 48); });
+  TX.dispenser = ctex(64, 64, (c) => { c.fillStyle = '#d7263d'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#fff'; c.font = '800 14px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('SENHA', 32, 18);
+    c.fillStyle = '#1a0b12'; c.fillRect(14, 34, 36, 6); c.fillStyle = '#fffaf0'; c.fillRect(20, 40, 24, 14); });
+  TX.bossSign = ctex(512, 96, (c, w, h) => { c.fillStyle = '#5a3a22'; c.fillRect(0, 0, w, h); c.strokeStyle = '#d8b04a'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16);
+    c.fillStyle = '#ffd56a'; c.font = '800 40px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Diretoria · Dr. Carimbo', w / 2, h / 2 + 2); });
+  TX.wallHigh = ctex(64, 64, (c) => { c.fillStyle = '#ece2c8'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#e0d6bc'; c.fillRect(0, 62, 64, 2); }, true);
+  const wallLow = (draw) => ctex(256, 224, (c, w, h) => { c.fillStyle = '#ece2c8'; c.fillRect(0, 0, w, h);
+    c.fillStyle = '#6aa898'; c.fillRect(0, 150, w, 74); c.fillStyle = '#4f8a7c'; for (let x = 0; x < w; x += 16) c.fillRect(x, 150, 1, 74); for (let y = 150; y < h; y += 16) c.fillRect(0, y, w, 1);
+    c.fillStyle = '#3a5a52'; c.fillRect(0, 146, w, 5); draw(c, w, h); });
+  const guiche = (n, closed) => wallLow((c) => {
+    c.fillStyle = '#4a5262'; c.fillRect(54, 46, 148, 82); c.fillStyle = '#bfe0ec'; c.fillRect(60, 52, 136, 70); c.fillStyle = 'rgba(255,255,255,.5)'; c.fillRect(70, 58, 10, 56);
+    c.fillStyle = '#7a5a3a'; c.fillRect(40, 124, 176, 22); c.fillStyle = '#5a3a22'; c.fillRect(40, 124, 176, 4);
+    c.fillStyle = '#d7263d'; c.fillRect(84, 14, 88, 26); c.fillStyle = '#fff'; c.font = '800 17px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(`Guichê ${n}`, 128, 28);
+    if (closed) { c.fillStyle = '#1a0b12'; c.fillRect(88, 74, 80, 26); c.fillStyle = '#ff3d3d'; c.font = '800 16px "Baloo 2", sans-serif'; c.fillText('FECHADO', 128, 88); } });
+  TX.wallLow = [
+    guiche(1, false),
+    wallLow((c) => { c.fillStyle = '#fffaf0'; c.fillRect(74, 24, 108, 108); c.strokeStyle = '#3a4252'; c.lineWidth = 4; c.strokeRect(74, 24, 108, 108);
+      c.fillStyle = '#3a4252'; c.font = '800 18px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Aguarde', 128, 50); c.fillText('sua senha', 128, 72);
+      c.fillStyle = '#d7263d'; c.font = '800 13px "Baloo 2", sans-serif'; c.fillText('Tempo estimado:', 128, 98); c.fillText('indeterminado', 128, 116); }),
+    guiche(2, true),
+    wallLow((c) => { c.fillStyle = '#1a0b12'; c.fillRect(58, 36, 140, 70); c.fillStyle = '#ff3d3d'; c.font = '800 20px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('SENHA', 128, 56); c.font = '800 30px "Baloo 2", sans-serif'; c.fillText('047', 128, 86); }),
+    guiche(3, false),
+    wallLow((c) => { c.fillStyle = '#8a5a32'; c.fillRect(88, 30, 80, 120); c.fillStyle = '#6a4222'; c.fillRect(96, 38, 64, 44); c.fillRect(96, 90, 64, 52); c.fillStyle = '#ffd23f'; c.fillRect(150, 92, 6, 10);
+      c.fillStyle = '#fffaf0'; c.fillRect(92, 10, 72, 16); c.fillStyle = '#3a4252'; c.font = '800 12px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('PROTOCOLO', 128, 18); })
+  ];
   TX.adega = ctex(608, 288, (c, w, h) => {
     c.fillStyle = '#7a1530'; c.fillRect(0, 0, w, h); c.fillStyle = '#62102a'; for (let y = 0; y < h; y += 12) c.fillRect(0, y, w, 2);
     c.fillStyle = '#2a0a16'; c.fillRect(40, 20, 528, 66); c.strokeStyle = '#ff3d8b'; c.lineWidth = 4; c.strokeRect(46, 26, 516, 54);
@@ -684,8 +854,9 @@ function buildStatic(){
   if (staticGroup) { scene.remove(staticGroup); staticGroup.traverse(o => { if (o.geometry) o.geometry.dispose(); if (o.material) [].concat(o.material).forEach(m => m.dispose()); }); }
   const FX = LV && LV.facade ? LV.facade.x : null;
   staticGroup = new THREE.Group(); scene.add(staticGroup);
-  MAT.side = toon(0xffffff, { map: TX.side }); MAT.curb = toon(0xffffff, { map: TX.curb }); MAT.brick = toon(0xffffff, { map: TX.brick });
-  MAT.crate = toon(0xffffff, { map: TX.crate }); MAT.awn = toon(0xffffff, { map: TX.awning });
+  const OFF = LV && LV.theme === 'office';
+  MAT.side = toon(0xffffff, { map: OFF ? TX.offFloor : TX.side }); MAT.curb = toon(0xffffff, { map: OFF ? TX.offEdge : TX.curb }); MAT.brick = toon(0xffffff, { map: OFF ? TX.offBase : TX.brick });
+  MAT.crate = toon(0xffffff, { map: OFF ? TX.offBox : TX.crate }); MAT.awn = toon(0xffffff, { map: OFF ? TX.offShelf : TX.awning });
   const D = 4;
   // chão em trechos
   const tops = []; for (let x = 0; x < COLS; x++) { let t = -1; for (let r = 0; r < ROWS; r++) if (grid[r][x] === '#') { t = r; break; } tops.push(t); }
@@ -701,6 +872,8 @@ function buildStatic(){
   }
   mesh(new THREE.BoxGeometry(20, 0.3, D), [MAT.curb, MAT.curb, MAT.side, MAT.side, MAT.curb, MAT.curb], -10, -0.15, 0, staticGroup, false);
   mesh(scaleUV(new THREE.BoxGeometry(20, 8.7, D), 10, 4.35, 2), MAT.brick, -10, -4.65, 0, staticGroup, false);
+  mesh(new THREE.BoxGeometry(COLS + 48, 0.2, D), toon(OFF ? 0x2a2530 : 0x2a1a20), COLS / 2, -3.2, 0, staticGroup, false);
+  mesh(new THREE.BoxGeometry(COLS + 48, 3.2, 0.2), toon(OFF ? 0x3a3440 : 0x3a2228), COLS / 2, -1.6, -2.05, staticGroup, false);
   // engradados
   const crates = []; for (let r = 0; r < ROWS; r++) for (let x = 0; x < COLS; x++) if (grid[r][x] === 'B') crates.push([x, r]);
   const inst = new THREE.InstancedMesh(new THREE.BoxGeometry(1, 1, 1.4), MAT.crate, crates.length);
@@ -717,6 +890,7 @@ function buildStatic(){
       if (ph > 0.2) mesh(new THREE.CylinderGeometry(0.05, 0.05, ph, 6), toon(0x5a6070), px, y0 + ph / 2, -1.1, staticGroup); }
     x += n;
   }
+  if (OFF) { buildOfficeBack(); return; }
   // prédios do fundo
   const R = rng(5), facades = [0xe08a64, 0xf0c66a, 0x84b2d6, 0xbccc76, 0xe4a0b2, 0xf2ead6, 0x96c8b0, 0xd8a070];
   const winMat = new THREE.MeshLambertMaterial({ map: TX.windows, transparent: true });
@@ -765,6 +939,29 @@ function buildStatic(){
     mesh(new THREE.BoxGeometry(2.4, 0.6, 0.08), [toon(0x2e6b9e), toon(0x2e6b9e), toon(0x2e6b9e), toon(0x2e6b9e), new THREE.MeshBasicMaterial({ map: TX.street }), toon(0x2e6b9e)], 6.5, 3.2, -1.55, staticGroup);
   }
 }
+function buildOfficeBack(){
+  const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24;
+  const lowMats = TX.wallLow.map(t => new THREE.MeshLambertMaterial({ map: t }));
+  for (let x = W0, i = 0; x < W1; x += segW, i++) mesh(new THREE.PlaneGeometry(segW, 7), lowMats[(i * 5 + 2) % lowMats.length], x + segW / 2, 2.5, wallZ, staticGroup, false);
+  const hg = new THREE.PlaneGeometry(W1 - W0, 18); const uv = hg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (W1 - W0) / 4, uv.getY(i) * 4.5);
+  mesh(hg, new THREE.MeshLambertMaterial({ map: TX.wallHigh }), (W0 + W1) / 2, 15, wallZ, staticGroup, false);
+  mesh(new THREE.BoxGeometry(W1 - W0, 0.3, 0.3), toon(0x8a7a5a), (W0 + W1) / 2, 6, wallZ + 0.15, staticGroup, false);
+  const fl = mesh(new THREE.PlaneGeometry(W1 - W0, 1.8), toon(0xffffff, { map: TX.offFloor }), (W0 + W1) / 2, -0.02, -2.8, staticGroup, false); fl.rotation.x = -Math.PI / 2;
+  TX.offFloor.repeat.set(1, 1);
+  const lamp = new THREE.MeshBasicMaterial({ color: 0xfffbe8 });
+  for (let x = W0 + 3; x < W1; x += 7) { mesh(new THREE.BoxGeometry(2.6, 0.14, 0.5), lamp, x, 10.5, wallZ + 0.3, staticGroup, false); mesh(new THREE.BoxGeometry(2.8, 0.06, 0.6), toon(0xb8b4aa), x, 10.6, wallZ + 0.3, staticGroup, false); }
+  const chair = toon(0x3f73b8), metal = toon(0x8a8f9a), rope = toon(0xd7263d), pot = toon(0xb86a3a), leaf = toon(0x4f9a4a, { flatShading: true });
+  for (let x = 6, i = 0; x < COLS - 4; x += 9, i++) {
+    if (LV.bossSign && x > 52 && x < 76) continue;
+    const kind = i % 3;
+    if (kind === 0) for (let k = 0; k < 3; k++) { const cx = x + k * 0.62; mesh(new THREE.BoxGeometry(0.5, 0.08, 0.5), chair, cx, 0.5, -3.0, staticGroup); mesh(new THREE.BoxGeometry(0.5, 0.55, 0.08), chair, cx, 0.8, -3.24, staticGroup);
+      mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.5, 6), metal, cx, 0.25, -3.0, staticGroup); }
+    else if (kind === 1) { for (const k of [0, 1.6, 3.2]) { mesh(new THREE.CylinderGeometry(0.05, 0.08, 1.0, 8), metal, x + k, 0.5, -2.6, staticGroup); mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.04, 10), metal, x + k, 0.02, -2.6, staticGroup); }
+      for (const k of [0.8, 2.4]) mesh(new THREE.BoxGeometry(1.6, 0.06, 0.04), rope, x + k, 0.88, -2.6, staticGroup); }
+    else { mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), pot, x + 1, 0.25, -3.0, staticGroup); mesh(new THREE.IcosahedronGeometry(0.55, 0), leaf, x + 1, 0.95, -3.0, staticGroup); }
+  }
+  if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.bossSign }), 64, 7.6, wallZ + 0.05, staticGroup, false);
+}
 function rng(seed){ return () => { seed = (seed * 9301 + 49297) % 233280; return seed / 233280; }; }
 
 /* ---------- 3D: personagens e objetos ---------- */
@@ -808,6 +1005,13 @@ function buildEnemy(e){
     eyes(0.32, 0.82, [-0.1, 0.1]);
     parts.legs = [[-0.14, 0], [0.14, 0]].map(([x, z]) => { const lg = new THREE.Group(); lg.position.set(x, 0.26, z); body.add(lg);
       mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.22, 6), blk, 0, -0.1, 0, lg); mesh(new THREE.BoxGeometry(0.16, 0.05, 0.1), blk, 0.04, -0.22, 0, lg); return lg; });
+  } else if (e.type === 'carimbo') {
+    // carimbo saltitante
+    mesh(new THREE.BoxGeometry(0.62, 0.2, 0.5), toon(0xd7263d), 0, 0.1, 0, body);
+    mesh(new THREE.BoxGeometry(0.66, 0.12, 0.54), toon(0x8a5a2a), 0, 0.26, 0, body);
+    mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.36, 10), toon(0x6b3f15), 0, 0.5, 0, body);
+    mesh(new THREE.SphereGeometry(0.17, 12, 10), toon(0x6b3f15), 0, 0.78, 0, body);
+    eyes(0.29, 0.26, [-0.1, 0.1], 0.06);
   } else if (e.type === 'pombo') {
     // envelope de notificação voando
     mesh(new THREE.BoxGeometry(0.66, 0.44, 0.08), toon(0xf6eccf), 0, 0.24, 0, body);
@@ -831,26 +1035,7 @@ const capGeo = () => GEO.cap || (GEO.cap = new THREE.CylinderGeometry(0.28, 0.28
 const capMat = () => MAT.cap || (MAT.cap = [toon(0xffffff, { map: TX.capSide }), toon(0xffffff, { map: TX.capFace }), toon(0xffffff, { map: TX.capFace })]);
 function makeCap(){ const m = new THREE.Mesh(capGeo(), capMat()); m.rotation.x = Math.PI / 2; const g = new THREE.Group(); g.add(m); scene.add(g); return g; }
 
-function buildBoss(){
-  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
-  const yel = toon(0xf2b632), ora = toon(0xd88a1a), dark = toon(0x2a2a33), red = toon(0xd7263d), metal = toon(0x8a909a);
-  mesh(new THREE.BoxGeometry(2.0, 0.75, 1.5), yel, -0.1, 0.78, 0, body);
-  mesh(new THREE.BoxGeometry(0.7, 1.0, 1.5), ora, -1.25, 0.9, 0, body);
-  mesh(new THREE.BoxGeometry(2.02, 0.12, 1.52), dark, -0.1, 0.55, 0, body);
-  for (const x of [-0.85, 0.35]) for (const z of [-0.62, 0.62]) mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.25, 6), dark, x, 1.78, z, body);
-  mesh(new THREE.BoxGeometry(1.45, 0.1, 1.45), red, -0.25, 2.42, 0, body);
-  mesh(new THREE.BoxGeometry(0.5, 0.12, 0.6), dark, -0.45, 1.2, 0, body);
-  const wheels = [];
-  for (const [x, r] of [[-0.85, 0.36], [0.55, 0.42]]) for (const z of [-0.78, 0.78]) {
-    const w = mesh(new THREE.CylinderGeometry(r, r, 0.26, 12), dark, x, r, z, body); w.rotation.x = Math.PI / 2; wheels.push(w);
-    mesh(new THREE.CylinderGeometry(r * 0.45, r * 0.45, 0.28, 8), metal, x, r, z, body).rotation.x = Math.PI / 2;
-  }
-  for (const z of [-0.45, 0.45]) mesh(new THREE.BoxGeometry(0.12, 2.6, 0.12), metal, 1.05, 1.3, z, body);
-  mesh(new THREE.BoxGeometry(0.14, 0.12, 1.02), metal, 1.05, 2.55, 0, body);
-  const forks = new THREE.Group(); forks.position.set(1.15, 0.3, 0); body.add(forks);
-  mesh(new THREE.BoxGeometry(0.1, 0.6, 1.0), dark, 0, 0.2, 0, forks);
-  for (const z of [-0.3, 0.3]) mesh(new THREE.BoxGeometry(0.95, 0.08, 0.14), metal, 0.47, -0.05, z, forks);
-  for (let i = 0; i < 3; i++) mesh(new THREE.BoxGeometry(0.7, 0.16, 0.8), toon(0xffffff, { map: TX.paper }), 0.5 + (i % 2) * 0.04, 0.08 + i * 0.16, 0, forks);
+function makeCarimbo(body){
   const ze = new THREE.Group(); ze.position.set(-0.3, 1.15, 0); body.add(ze);
   const skin = toon(0xe0a882), suit = toon(0x5a6070), shirt = toon(0xf4f4f0), blk = toon(0x1a0b12), grey = toon(0xb8b8c0);
   mesh(new THREE.BoxGeometry(0.58, 0.58, 0.46), suit, 0, 0.32, 0, ze);
@@ -871,6 +1056,48 @@ function buildBoss(){
     const br = mesh(new THREE.BoxGeometry(0.03, 0.03, 0.12), blk, 0.3, 1.0, z, ze, false); br.rotation.x = z > 0 ? -0.5 : 0.5; }
   mesh(new THREE.SphereGeometry(0.05, 8, 6), toon(0xd08870), 0.33, 0.82, 0, ze, false);
   ze.userData.stamp = armF;
+  return ze;
+}
+function buildPanel(){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
+  const frame = toon(0x4a5262), red = toon(0xd7263d), wood = toon(0x6b3f15);
+  mesh(new THREE.BoxGeometry(2.8, 0.42, 1.0), red, 0, 0.21, 0, body);
+  mesh(new THREE.BoxGeometry(2.9, 0.16, 1.05), toon(0x8a5a2a), 0, 0.5, 0, body);
+  for (const x of [-0.8, 0.8]) mesh(new THREE.CylinderGeometry(0.1, 0.12, 0.5, 10), wood, x, 0.8, 0, body);
+  mesh(new THREE.BoxGeometry(3.4, 1.6, 0.7), frame, 0, 1.85, 0, body);
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 112; const tex = new THREE.CanvasTexture(cv);
+  mesh(new THREE.PlaneGeometry(3.1, 1.36), new THREE.MeshBasicMaterial({ map: tex }), 0, 1.85, 0.36, body, false);
+  for (const x of [-1.3, 1.3]) mesh(new THREE.CylinderGeometry(0.03, 0.03, 12, 6), toon(0x2a2a33), x, 8.65, 0, body, false);
+  const ze = makeCarimbo(body); ze.position.set(0, 2.65, 0);
+  return { g, body, ze, cv, tex, last: '', zeBaseY: 2.65 };
+}
+function drawPanel(o, l1, l2, col){
+  const key = l1 + '|' + l2 + '|' + col; if (o.last === key) return; o.last = key;
+  const c = o.cv.getContext('2d'); c.fillStyle = '#120a0e'; c.fillRect(0, 0, 256, 112);
+  c.fillStyle = col; c.textAlign = 'center'; c.textBaseline = 'middle'; c.font = '800 34px "Baloo 2", sans-serif'; c.fillText(l1, 128, 40);
+  c.font = '700 22px "Baloo 2", sans-serif'; c.fillStyle = '#ffd6d6'; c.fillText(l2, 128, 84); o.tex.needsUpdate = true;
+}
+function buildBoss(){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
+  const yel = toon(0xf2b632), ora = toon(0xd88a1a), dark = toon(0x2a2a33), red = toon(0xd7263d), metal = toon(0x8a909a);
+  mesh(new THREE.BoxGeometry(2.0, 0.75, 1.5), yel, -0.1, 0.78, 0, body);
+  mesh(new THREE.BoxGeometry(0.7, 1.0, 1.5), ora, -1.25, 0.9, 0, body);
+  mesh(new THREE.BoxGeometry(2.02, 0.12, 1.52), dark, -0.1, 0.55, 0, body);
+  for (const x of [-0.85, 0.35]) for (const z of [-0.62, 0.62]) mesh(new THREE.CylinderGeometry(0.05, 0.05, 1.25, 6), dark, x, 1.78, z, body);
+  mesh(new THREE.BoxGeometry(1.45, 0.1, 1.45), red, -0.25, 2.42, 0, body);
+  mesh(new THREE.BoxGeometry(0.5, 0.12, 0.6), dark, -0.45, 1.2, 0, body);
+  const wheels = [];
+  for (const [x, r] of [[-0.85, 0.36], [0.55, 0.42]]) for (const z of [-0.78, 0.78]) {
+    const w = mesh(new THREE.CylinderGeometry(r, r, 0.26, 12), dark, x, r, z, body); w.rotation.x = Math.PI / 2; wheels.push(w);
+    mesh(new THREE.CylinderGeometry(r * 0.45, r * 0.45, 0.28, 8), metal, x, r, z, body).rotation.x = Math.PI / 2;
+  }
+  for (const z of [-0.45, 0.45]) mesh(new THREE.BoxGeometry(0.12, 2.6, 0.12), metal, 1.05, 1.3, z, body);
+  mesh(new THREE.BoxGeometry(0.14, 0.12, 1.02), metal, 1.05, 2.55, 0, body);
+  const forks = new THREE.Group(); forks.position.set(1.15, 0.3, 0); body.add(forks);
+  mesh(new THREE.BoxGeometry(0.1, 0.6, 1.0), dark, 0, 0.2, 0, forks);
+  for (const z of [-0.3, 0.3]) mesh(new THREE.BoxGeometry(0.95, 0.08, 0.14), metal, 0.47, -0.05, z, forks);
+  for (let i = 0; i < 3; i++) mesh(new THREE.BoxGeometry(0.7, 0.16, 0.8), toon(0xffffff, { map: TX.paper }), 0.5 + (i % 2) * 0.04, 0.08 + i * 0.16, 0, forks);
+  const ze = makeCarimbo(body);
   return { g, body, forks, ze, wheels };
 }
 function buildZe(){
@@ -912,11 +1139,11 @@ function buildDynamic(){
     mesh(new THREE.CylinderGeometry(0.06, 0.08, 2, 8), toon(0x5a6070), 0, 1, -0.6, g);
     const lamp = mesh(new THREE.SphereGeometry(0.22, 12, 10), new THREE.MeshBasicMaterial({ color: 0x8a8f9a }), 0, 2.15, -0.6, g); return lamp; });
   V.plats = plats.map(m => { const g = add(new THREE.Group()); scene.add(g);
-    mesh(new THREE.BoxGeometry(3, 0.35, 1.6), toon(0xffffff, { map: TX.crate }), 1.5, -0.175, 0, g);
+    mesh(new THREE.BoxGeometry(3, 0.35, 1.6), toon(0xffffff, { map: LV.theme === 'office' ? TX.lift : TX.crate }), 1.5, -0.175, 0, g);
     for (const x of [0.4, 2.6]) mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 6), toon(0x6b6f7a), x, -0.8, 0, g, false);
     return g; });
   if (selo) { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(selo.x), WY(selo.y), 0);
-    mesh(new THREE.BoxGeometry(0.66, 0.88, 0.05), [toon(0xfffaf0), toon(0xfffaf0), toon(0xfffaf0), toon(0xfffaf0), new THREE.MeshBasicMaterial({ map: TX.doc }), new THREE.MeshBasicMaterial({ map: TX.doc })], 0, 0, 0, g);
+    mesh(new THREE.BoxGeometry(0.66, 0.88, 0.05), [toon(0xfffaf0), toon(0xfffaf0), toon(0xfffaf0), toon(0xfffaf0), new THREE.MeshBasicMaterial({ map: TX.docs[LV.zone] }), new THREE.MeshBasicMaterial({ map: TX.docs[LV.zone] })], 0, 0, 0, g);
     const gl = new THREE.PointLight(0xffd23f, 0.9, 4); g.add(gl); V.selo = g; }
   if (goal) { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(goal.x), WY(goal.y), 0);
     mesh(new THREE.CylinderGeometry(0.07, 0.07, 2.4, 8), toon(0x9aa0aa), 0, 1.2, 0, g);
@@ -926,10 +1153,23 @@ function buildDynamic(){
     mesh(new THREE.BoxGeometry(1.6, 1.6, 0.05), toon(0x1a0b12), 0, 0, 0, board);
     V.goal = board; }
   V.pads = pads.map(pd => add(mesh(new THREE.BoxGeometry(1.3, 0.06, 1.6), [toon(0xd7263d), toon(0xd7263d), toon(0xffffff, { map: TX.pad }), toon(0xd7263d), toon(0xd7263d), toon(0xd7263d)], WX(pd.x), WY(pd.y) + 0.03, 0, scene, false)));
+  V.belts = belts.map(bt => { const len = (bt.x1 - bt.x0) / T, geo = new THREE.BoxGeometry(len, 0.14, 1.5); const uv = geo.attributes.uv; for (let i = 8; i < 12; i++) uv.setXY(i, uv.getX(i) * len / 2, uv.getY(i));
+    return add(mesh(geo, [toon(0x2a2a30), toon(0x2a2a30), new THREE.MeshBasicMaterial({ map: bt.dir > 0 ? TX.beltR : TX.beltL }), toon(0x2a2a30), toon(0x3a3a44), toon(0x3a3a44)], bt.x0 / T + len / 2, WY(bt.y) + 0.05, 0, scene, false)); });
+  V.buttons = buttons.map(bn => { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(bn.x), WY(bn.y), -0.75);
+    mesh(new THREE.CylinderGeometry(0.08, 0.1, 0.9, 8), toon(0x6a6f7a), 0, 0.45, 0, g);
+    mesh(new THREE.BoxGeometry(0.6, 0.6, 0.4), [toon(0xb81c30), toon(0xb81c30), toon(0xb81c30), toon(0xb81c30), new THREE.MeshBasicMaterial({ map: TX.dispenser }), toon(0xb81c30)], 0, 1.2, 0, g);
+    const light = mesh(new THREE.SphereGeometry(0.1, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3d3d }), 0, 1.6, 0, g, false);
+    const ticket = mesh(new THREE.BoxGeometry(0.3, 0.02, 0.2), toon(0xfffaf0), 0, 1.0, 0.3, g, false); ticket.visible = false;
+    return { g, light, ticket }; });
+  V.doors = doors.map(d => { const g = add(new THREE.Group()); scene.add(g); const h = d.ty1 - d.ty0;
+    mesh(new THREE.BoxGeometry(0.9, h, 1.5), toon(0x6a7a90), 0, h / 2, 0, g);
+    for (let k = 1; k < h; k += 2) mesh(new THREE.BoxGeometry(0.92, 0.06, 1.52), toon(0x56647a), 0, k, 0, g, false);
+    mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: TX.doorSign }), 0, 1.5, 0.76, g, false).rotation.y = 0;
+    g.position.set(d.tx + 0.5, 13 - d.ty1, 0); g.userData.base = 13 - d.ty1; g.userData.h = h; return g; });
   V.boss = null; V.gate = null; V.crates = []; V.npc = null;
   if (npc) { V.npc = add(buildZe()); V.npc.position.set(WX(npc.x), WY(npc.y), -0.9); V.npc.rotation.y = -0.5; V.npc.scale.x = -1; }
   if (boss) {
-    V.boss = buildBoss(); add(V.boss.g);
+    V.boss = boss.kind === 'panel' ? buildPanel() : buildBoss(); add(V.boss.g);
     const gate = add(new THREE.Group()); scene.add(gate);
     for (let i = 0; i < 9; i++) mesh(new THREE.BoxGeometry(1, 1, 1.4), MAT.crate, boss.a0 - 0.5, 0.5 + i, 0, gate);
     V.gate = gate;
@@ -984,6 +1224,7 @@ function syncDynamic(){
     if (o.parts.wheels) o.parts.wheels.forEach(w => w.rotation.y += Math.abs(e.vx) * 0.12);
     if (o.parts.drawer) o.parts.drawer.position.x = 0.38 + Math.abs(Math.sin(e.t * 0.2)) * 0.12;
     if (o.parts.legs || o.parts.wheels) o.body.position.y = Math.abs(Math.sin(e.t * 0.25)) * 0.04;
+    if (e.type === 'carimbo') o.body.scale.y = e.hy === 0 && (e.land || 0) < 8 ? 0.72 : (e.hvy < 0 ? 1.15 : 1);
   });
   springs.forEach((s, i) => { const v = V.springs[i], c = s.comp > 0 ? 0.35 : 1; v.coil.scale.y = c; v.plate.position.y = 0.18 + 0.3 * c; });
   checks.forEach((k, i) => V.checks[i].material.color.setHex(k.on ? (t % 20 < 10 ? 0xffd23f : 0xfff2a0) : 0x8a8f9a));
@@ -995,19 +1236,31 @@ function syncDynamic(){
     else { const b = 140 * 0.18, tgt = Math.ceil((b - Math.PI) / (Math.PI * 2)) * Math.PI * 2 + Math.PI; V.goal.rotation.y += (tgt - V.goal.rotation.y) * 0.2; }
   }
   if (V.npc) V.npc.userData.wave.rotation.x = Math.sin(t * 0.15) * 0.5;
+  if (TX.beltR) { TX.beltR.offset.x = -(t * 0.02) % 1; TX.beltL.offset.x = (t * 0.02) % 1; }
+  if (V.buttons) buttons.forEach((bn, i) => { const o = V.buttons[i]; o.light.material.color.setHex(bn.used ? 0x3fdf6a : (t % 30 < 15 ? 0xff3d3d : 0x8a1a1a)); o.ticket.visible = bn.used; });
+  if (V.doors) doors.forEach((d, i) => { const g = V.doors[i]; d.lift += ((d.open ? 1 : 0) - d.lift) * 0.06; g.position.y = g.userData.base + d.lift * (g.userData.h + 1); g.visible = d.lift < 0.98; });
   if (V.boss && boss) {
     const b = boss, o = V.boss;
     o.g.position.set(WX(b.x), WY(b.y), 0); o.g.scale.x = b.dir;
     o.g.visible = b.state !== 'idle' && !(b.inv > 0 && t % 6 < 3);
-    o.forks.position.y = 0.3 + b.forks * 1.3;
-    if (b.state === 'move') o.wheels.forEach(w => w.rotation.y -= 0.15);
-    o.ze.position.x = -0.3 + (b.zeX / T) * b.dir; o.ze.position.y = 1.15 + b.zeY / T;
-    o.ze.visible = b.zeX < 260;
-    o.body.rotation.z = b.state === 'dead' ? -0.14 : (b.state === 'aim' ? Math.sin(t * 0.8) * 0.02 : 0);
-    o.ze.userData.stamp.rotation.z = b.state === 'aim' || b.state === 'cool' ? Math.sin(t * 0.5) * 0.6 : 0;
+    if (b.kind === 'panel') {
+      o.ze.position.x = b.zeX / T; o.ze.position.y = o.zeBaseY + b.zeY / T - Math.min(o.zeBaseY, Math.max(0, (b.zeX - 30) / 12));
+      o.ze.visible = b.zeX < 260;
+      o.body.rotation.z = b.state === 'dead' ? -0.12 : (b.state === 'warn' ? Math.sin(t * 1.3) * 0.04 : 0);
+      o.ze.userData.stamp.rotation.z = b.state === 'warn' || b.state === 'stuck' ? Math.sin(t * 0.5) * 0.6 : 0;
+      const st = b.state, txt = st === 'dead' ? ['ATENDIDO!', 'Senha: a sua'] : st === 'stuck' ? ['PAUSA', 'pro cafezinho'] : st === 'warn' ? (t % 20 < 10 ? ['PRÓXIMO...', ''] : ['', 'ou não']) : ['SENHA ' + String(b.num).padStart(3, '0'), 'A sua: 999'];
+      drawPanel(o, txt[0], txt[1], st === 'stuck' ? '#ffd23f' : '#ff3d3d');
+    } else {
+      o.forks.position.y = 0.3 + b.forks * 1.3;
+      if (b.state === 'move') o.wheels.forEach(w => w.rotation.y -= 0.15);
+      o.ze.position.x = -0.3 + (b.zeX / T) * b.dir; o.ze.position.y = 1.15 + b.zeY / T;
+      o.ze.visible = b.zeX < 260;
+      o.body.rotation.z = b.state === 'dead' ? -0.14 : (b.state === 'aim' ? Math.sin(t * 0.8) * 0.02 : 0);
+      o.ze.userData.stamp.rotation.z = b.state === 'aim' || b.state === 'cool' ? Math.sin(t * 0.5) * 0.6 : 0;
+    }
     if (V.gate) V.gate.visible = !!G.lock;
     while (V.crates.length < b.crates.length) { const m = new THREE.Mesh(GEO.paperStack || (GEO.paperStack = new THREE.BoxGeometry(0.8, 0.5, 0.7)), MAT.paper || (MAT.paper = toon(0xffffff, { map: TX.paper }))); m.castShadow = true; scene.add(m); V.crates.push(m); V.all.push(m); }
-    V.crates.forEach((m, i) => { const c = b.crates[i]; m.visible = !!c && c.alive; if (c) { m.position.set(WX(c.x), WY(c.y), 0); m.rotation.z = c.rot; } });
+    V.crates.forEach((m, i) => { const c = b.crates[i]; m.visible = !!c && c.alive; if (c) { m.position.set(WX(c.x), WY(c.y), 0); m.rotation.z = c.rot; if (c.kind === 'ticket') m.scale.set(0.6, 0.08, 0.5); else m.scale.set(1, 1, 1); } });
   }
 }
 function syncHero(){
@@ -1054,6 +1307,7 @@ function updateCamera(snap){
     tx = WX(P.x) + cam.look + 0.6;
     if (G.lock && boss) tx = (boss.a0 + boss.a1) / 2;
     ty = P.state === 'dead' ? cam.y : Math.max(1.6, WY(P.y) + 1.3);
+    if (G.lock && boss && boss.kind === 'panel') ty = Math.max(ty, 3.6);
   }
   tx = Math.max(6, Math.min(COLS - 11, tx));
   if (snap) { cam.x = tx; cam.y = ty; }
@@ -1073,7 +1327,7 @@ function updHUD(){
   if (key === hudCache) return; hudCache = key;
   $('hScore').textContent = G.score; $('hTime').textContent = tm; $('hRings').textContent = G.ringsN;
   $('hRingK').classList.toggle('warn', warn); $('hLives').textContent = '×' + G.lives;
-  $('seloHud').classList.toggle('hidden', !G.seloGot || G.state === 'title');
+  $('seloHud').classList.toggle('hidden', !(LV && G.docs[LV.zone]) || G.state === 'title');
   $('bossHud').classList.toggle('hidden', bh < 0);
   if (bh >= 0) $('bossPips').innerHTML = Array.from({ length: 6 }, (_, i) => `<i class="${i < bh ? '' : 'off'}"></i>`).join(' ');
 }
@@ -1094,7 +1348,15 @@ function step(){
 function loadNum(k){ try { return parseInt(localStorage.getItem(k) || '0', 10) || 0; } catch(e) { return 0; } }
 function saveFlag(k, v){ try { if (v > loadNum(k)) localStorage.setItem(k, String(v)); } catch(e) {} }
 let againAction = null;
+const NOTES = {
+  1: { found: 'Você achou o CNPJ escondido nos telhados!', hint: 'Tem um documento escondido nesta fase: o CNPJ. Dica: procure lá no alto.', act2: 'Agora vem o Ato 3: o Doutor Carimbo está esperando na Repartição.',
+       winGot: 'Você venceu o Doutor Carimbo e a Adega já tem o CNPJ!', winMiss: 'Você venceu o Doutor Carimbo! Faltou o CNPJ: ele está escondido nos telhados do Ato 1.', next: 'A próxima zona é a Repartição.' },
+  2: { found: 'Você achou o Alvará escondido no alto dos arquivos!', hint: 'Tem um documento escondido nesta fase: o Alvará. Dica: procure lá no alto.', act2: 'Agora vem o Ato 3: o painel de senhas do Doutor Carimbo.',
+       winGot: 'Você venceu o painel de senhas e a Adega já tem o Alvará!', winMiss: 'Você venceu o painel de senhas! Faltou o Alvará: ele está no alto dos arquivos do Ato 1 desta zona.', next: 'A Zona 3, Processo Congelado, vem em breve.' }
+};
 const EDU = {
+  2: { title: 'Alvará: a licença para abrir as portas',
+       text: 'O Alvará de Funcionamento é a autorização da prefeitura para a empresa funcionar naquele endereço e com aquela atividade. A prefeitura confere se o imóvel pode receber o negócio e, dependendo da atividade, também pede outras licenças, como a dos Bombeiros e a da Vigilância Sanitária. Desde a Lei da Liberdade Econômica, de 2019, atividades de baixo risco podem ser dispensadas do alvará, mas as regras variam de cidade para cidade.' },
   1: { title: 'CNPJ: a identidade da empresa',
        text: 'O CNPJ (Cadastro Nacional da Pessoa Jurídica) é como o CPF da empresa, registrado na Receita Federal. Sem ele, a loja não emite nota fiscal, não abre conta de empresa, não compra direto dos distribuidores nem registra funcionários. O MEI tira o CNPJ de graça pelo Portal do Empreendedor; empresas maiores passam pela Junta Comercial e por cadastros na prefeitura e no estado antes de abrir as portas.' }
 };
@@ -1105,19 +1367,17 @@ function finish(){
   const tb = secs < 45 ? 10000 : secs < 60 ? 5000 : secs < 90 ? 3000 : secs < 120 ? 2000 : secs < 180 ? 1000 : 0;
   const rb = G.ringsN * 100, base = G.score, total = base + tb + rb; G.score = total;
   const tm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
-  const zone = G.act === 3;
-  $('doneTitle').textContent = zone ? 'Zona 1 concluída!' : `Ato ${G.act} concluído!`;
+  const zoneEnd = G.act % 3 === 0, Z = LV.zone, actN = ((G.act - 1) % 3) + 1, got = !!G.docs[Z], last = G.act >= 6;
+  $('doneTitle').textContent = zoneEnd ? `Zona ${Z} concluída!` : `Ato ${actN} concluído!`;
   $('tally').innerHTML = `<span>Tempo ${tm}</span><b>${tb}</b><span>Moedas ${G.ringsN}</span><b>${rb}</b><span>Pontos</span><b>${base}</b><span>Total</span><b>${total}</b>`;
-  let note;
-  if (zone) note = (G.seloGot ? 'Você venceu o Doutor Carimbo e a Adega já tem o CNPJ!' : 'Você venceu o Doutor Carimbo! Faltou o CNPJ: ele está escondido nos telhados do Ato 1.') + ' A próxima zona é a Repartição.';
-  else if (G.act === 1) note = G.seloGot ? 'Você achou o CNPJ escondido nos telhados!' : 'Tem um documento escondido nesta fase: o CNPJ. Dica: procure lá no alto.';
-  else note = 'Agora vem o Ato 3: o Doutor Carimbo está esperando na Repartição.';
-  $('eduBox').classList.toggle('hidden', !zone);
-  if (zone) { $('eduTitle').textContent = EDU[1].title; $('eduText').textContent = EDU[1].text; }
+  const N = NOTES[Z];
+  const note = zoneEnd ? (got ? N.winGot : N.winMiss) + ' ' + N.next : actN === 1 ? (got ? N.found : N.hint) : N.act2;
+  $('eduBox').classList.toggle('hidden', !zoneEnd);
+  if (zoneEnd) { $('eduTitle').textContent = EDU[Z].title; $('eduText').textContent = EDU[Z].text; }
   $('seloNote').textContent = note;
-  $('againBtn').textContent = zone ? 'Jogar a zona de novo' : 'Próximo ato';
-  againAction = zone ? () => startAct(1, true) : () => startAct(G.act + 1, false);
-  saveFlag('motoca-ato', zone ? 3 : G.act + 1);
+  $('againBtn').textContent = zoneEnd ? (last ? 'Jogar desde o início' : `Ir para a Zona ${Z + 1}`) : 'Próximo ato';
+  againAction = zoneEnd && last ? () => startAct(1, true) : () => startAct(G.act + 1, false);
+  saveFlag('motoca-ato', Math.min(6, G.act + 1));
   $('done').classList.remove('hidden');
 }
 function startAct(n, fresh){
@@ -1136,8 +1396,8 @@ function startAct(n, fresh){
 }
 function startGame(){ startAct(1, true); }
 function refreshTitle(){
-  const n = Math.min(3, loadNum('motoca-ato')), cb = $('contBtn');
-  cb.classList.toggle('hidden', n < 2); cb.textContent = `Continuar do Ato ${n}`;
+  const n = Math.min(6, loadNum('motoca-ato')), cb = $('contBtn');
+  cb.classList.toggle('hidden', n < 2); if (n >= 2) cb.textContent = `Continuar: Zona ${ACTS[n].zone} · Ato ${((n - 1) % 3) + 1}`;
 }
 function showTitle(){
   ['done','over'].forEach(id => $(id).classList.add('hidden'));
@@ -1145,7 +1405,7 @@ function showTitle(){
   G.state = 'title'; refreshTitle(); $('title').classList.remove('hidden');
 }
 $('startBtn').onclick = startGame;
-$('contBtn').onclick = () => startAct(Math.min(3, loadNum('motoca-ato')), true);
+$('contBtn').onclick = () => startAct(Math.min(6, loadNum('motoca-ato')), true);
 $('againBtn').onclick = () => againAction && againAction();
 $('menuBtn').onclick = showTitle;
 $('retryBtn').onclick = () => startAct(G.act, true);
@@ -1166,7 +1426,7 @@ function frame(now){
 }
 const fontsReady = document.fonts ? Promise.race([document.fonts.load('800 40px "Baloo 2"'), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve();
 fontsReady.then(() => {
-  G.seloGot = loadNum('motoca-selo1') > 0;
+  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0 };
   makeTextures(); buildLevel(); applySky(LV.sky); spawn(); buildStatic(); buildDynamic(); hero = buildHero(); refreshTitle();
   $('loading').remove(); $('title').classList.remove('hidden');
   updateCamera(true); requestAnimationFrame(frame);
