@@ -75,9 +75,17 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 #touch button{position:absolute;pointer-events:auto;border:0;border-radius:50%;width:76px;height:76px;font-family:inherit;font-weight:800;font-size:24px;
   color:var(--text);background:rgba(26,11,18,.35);box-shadow:inset 0 0 0 3px rgba(255,248,236,.45)}
 #touch button.on{background:rgba(255,210,63,.8);color:var(--ink)}
-#bL{left:calc(18px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
-#bR{left:calc(106px + env(safe-area-inset-left,0px));bottom:calc(18px + env(safe-area-inset-bottom,0px))}
-#bJ{right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:96px!important;height:96px!important;font-size:18px!important}
+#stick{position:absolute;left:0;bottom:0;width:48vw;height:62vh;pointer-events:auto;touch-action:none}
+#stickBase{position:absolute;left:calc(112px + env(safe-area-inset-left,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:132px;height:132px;margin-left:-66px;margin-bottom:0;border-radius:50%;
+  background:radial-gradient(circle,rgba(26,11,18,.25) 55%,rgba(26,11,18,.45) 70%);box-shadow:0 0 0 5px rgba(215,38,61,.85),0 0 18px rgba(215,38,61,.55),inset 0 0 0 2px rgba(255,248,236,.35);opacity:.85;transition:opacity .15s}
+#stickBase.free{bottom:auto;margin:0;transform:translate(-50%,-50%);opacity:1}
+#stickBase .ar{position:absolute;top:50%;transform:translateY(-50%);font-style:normal;font-size:22px;color:#ff4d5e;text-shadow:0 0 6px rgba(0,0,0,.5)}
+#stickBase .ar.l{left:-30px}#stickBase .ar.r{right:-30px}
+#stickBase.goL .ar.l,#stickBase.goR .ar.r{color:#ffd23f;transform:translateY(-50%) scale(1.35)}
+#stickKnob{position:absolute;left:50%;top:50%;width:76px;height:76px;margin:-38px 0 0 -38px;border-radius:50%;
+  background:radial-gradient(circle at 50% 50%,#f4f4f6 0 8%,transparent 9%),repeating-conic-gradient(from 0deg,#d9dce2 0 6deg,#aeb3bc 6deg 12deg,#eef0f3 12deg 18deg);
+  box-shadow:0 4px 10px rgba(0,0,0,.45),inset 0 0 0 4px #c9ccd3,inset 0 0 0 6px #8a8f99}
+#bJ{right:calc(22px + env(safe-area-inset-right,0px));bottom:calc(22px + env(safe-area-inset-bottom,0px));width:104px!important;height:104px!important;font-size:19px!important}
 #pauseBtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(150px + env(safe-area-inset-right,0px));border:0;border-radius:999px;width:44px;height:34px;
   background:rgba(26,11,18,.55);color:var(--text);font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;z-index:5}
 #pause{z-index:15}
@@ -126,8 +134,7 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 <div id="card" class="hidden"></div>
 
 <div id="touch" class="hidden">
-  <button id="bL" aria-label="Esquerda">◀</button>
-  <button id="bR" aria-label="Direita">▶</button>
+  <div id="stick" aria-label="Andar"><div id="stickBase"><i class="ar l">◀</i><i class="ar r">▶</i><div id="stickKnob"></div></div></div>
   <button id="bJ" aria-label="Pular">PULAR</button>
 </div>
 <button id="muteBtn">Som ligado</button>
@@ -288,12 +295,37 @@ addEventListener('keydown', e => {
 });
 addEventListener('keyup', e => { const k = KMAP[e.key]; if (k) keys[k] = 0; });
 const touchHeld = { l:0, r:0, j:0 };
-[['bL','l'],['bR','r'],['bJ','j']].forEach(([id, k]) => {
+[['bJ','j']].forEach(([id, k]) => {
   const b = $(id);
   const dn = e => { audio(); touchHeld[k] = 1; b.classList.add('on'); try { b.setPointerCapture(e.pointerId); } catch(_) {} e.preventDefault(); };
   const up = () => { touchHeld[k] = 0; b.classList.remove('on'); };
   b.addEventListener('pointerdown', dn); b.addEventListener('pointerup', up); b.addEventListener('pointercancel', up);
 });
+// joystick único: toque em qualquer ponto da metade esquerda e arraste para os lados
+const stick = $('stick'), sBase = $('stickBase'), sKnob = $('stickKnob');
+let stickId = null, sx0 = 0, sy0 = 0;
+function stickReset(){ stickId = null; touchHeld.l = 0; touchHeld.r = 0; sBase.classList.remove('free', 'goL', 'goR'); sBase.style.left = ''; sBase.style.top = ''; sKnob.style.transform = ''; }
+function stickMove(e){
+  if (e.pointerId !== stickId) return;
+  const R = 44, DZ = 10; let dx = e.clientX - sx0;
+  if (dx > R) { sx0 = e.clientX - R; dx = R; } else if (dx < -R) { sx0 = e.clientX + R; dx = -R; }
+  const dy = Math.max(-14, Math.min(14, (e.clientY - sy0) * 0.3));
+  sKnob.style.transform = `translate(${dx}px,${dy}px)`;
+  touchHeld.l = dx < -DZ ? 1 : 0; touchHeld.r = dx > DZ ? 1 : 0;
+  sBase.classList.toggle('goL', !!touchHeld.l); sBase.classList.toggle('goR', !!touchHeld.r);
+  e.preventDefault();
+}
+stick.addEventListener('pointerdown', e => {
+  audio(); if (stickId !== null) return; stickId = e.pointerId;
+  try { stick.setPointerCapture(e.pointerId); } catch(_) {}
+  const r = stick.getBoundingClientRect(), x = Math.max(70, e.clientX - r.left), y = Math.min(r.height - 70, e.clientY - r.top);
+  sx0 = e.clientX; sy0 = e.clientY;
+  sBase.style.left = x + 'px'; sBase.style.top = y + 'px'; sBase.classList.add('free');
+  stickMove(e);
+});
+stick.addEventListener('pointermove', stickMove);
+const stickUp = e => { if (e.pointerId === stickId) stickReset(); };
+stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercancel', stickUp); stick.addEventListener('lostpointercapture', stickUp);
 function readInput(){ inp.l = keys.l || touchHeld.l ? 1 : 0; inp.r = keys.r || touchHeld.r ? 1 : 0; inp.j = keys.j || touchHeld.j ? 1 : 0; }
 
 /* ---------- Fase (lógica) ---------- */
@@ -354,7 +386,7 @@ const checkpoint = (tx, ty=13) => checks.push({ x: tx * T + 8, y: ty * T, on:fal
 
 function level1(){
   newGrid(270);
-  hint(2, isTouch ? 'Segure ▶ para correr' : 'Segure → para correr'); hint(11, isTouch ? 'Toque PULAR para pular (segure para ir mais alto)' : 'Espaço para pular (segure para ir mais alto)');
+  hint(2, isTouch ? 'Arraste o botão redondo para a direita para correr' : 'Segure → para correr'); hint(11, isTouch ? 'Toque PULAR para pular (segure para ir mais alto)' : 'Espaço para pular (segure para ir mais alto)');
   hint(13, 'Pule na caixa para abrir o bônus'); hint(19, 'Pule em cima dos inimigos para derrotá-los'); hint(31, 'A mola joga você lá no alto'); hint(46, 'Se apanhar, você perde as moedas: pegue de volta!');
   ground(0, 45);
   ringLine(8, 5, 12);
@@ -2784,13 +2816,13 @@ $('contBtn').onclick = () => { audio(); openMap({}); };
 $('againBtn').onclick = () => againAction && againAction();
 $('menuBtn').onclick = showTitle;
 $('retryBtn').onclick = () => startAct(G.act, true);
-if (isTouch) $('keysNote').textContent = 'Use os botões na tela: setas para correr e PULAR para pular.';
+if (isTouch) $('keysNote').textContent = 'No celular: arraste o botão redondo da esquerda para os lados para correr e toque PULAR para pular.';
 document.addEventListener('visibilitychange', () => { if (document.hidden && (G.state === 'play' || G.state === 'card')) setPause(true); });
 function setPause(on){
   if (G.state !== 'play' && G.state !== 'card') on = false;
   G.paused = on; $('pause').classList.toggle('hidden', !on);
   $('touch').classList.toggle('hidden', on || !isTouch || !(G.state === 'play' || G.state === 'card'));
-  for (const k in touchHeld) touchHeld[k] = 0; for (const k in keys) keys[k] = 0;
+  for (const k in touchHeld) touchHeld[k] = 0; for (const k in keys) keys[k] = 0; stickReset();
   musUpdate();
 }
 $('pauseBtn').onclick = () => { audio(); setPause(true); };
