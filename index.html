@@ -89,6 +89,11 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 #pauseBtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(150px + env(safe-area-inset-right,0px));border:0;border-radius:999px;width:44px;height:34px;
   background:rgba(26,11,18,.55);color:var(--text);font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;z-index:5}
 #pause{z-index:15}
+#exitBtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(202px + env(safe-area-inset-right,0px));border:0;border-radius:999px;height:34px;padding:0 14px;
+  background:rgba(215,38,61,.85);color:#fff8ec;font-family:inherit;font-weight:800;font-size:15px;cursor:pointer;z-index:5}
+#pauseBtn.hidden + #exitBtn{display:none}
+#sair{z-index:16}
+a.btn{text-decoration:none}
 #muteBtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));border:0;border-radius:999px;
   background:rgba(26,11,18,.55);color:var(--text);font-family:inherit;font-weight:800;font-size:15px;padding:6px 14px;cursor:pointer}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px}
@@ -138,17 +143,23 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
   <button id="bJ" aria-label="Pular">PULAR</button>
 </div>
 <button id="muteBtn">Som ligado</button>
-<button id="pauseBtn" class="hidden" aria-label="Pausar">❚❚</button>
+<button id="pauseBtn" class="hidden" aria-label="Pausar">❚❚</button><button id="exitBtn" aria-label="Sair do jogo">✕ Sair</button>
 <section id="pause" class="screen dim hidden">
   <h2 class="logo out" style="font-size:clamp(40px,7vw,72px)">Pausa</h2>
-  <div class="row"><button class="btn" id="resumeBtn">Continuar</button><button class="btn ghost" id="restartBtn">Reiniciar fase</button><button class="btn ghost" id="pMapBtn">Mapa</button></div>
+  <div class="row"><button class="btn" id="resumeBtn">Continuar</button><button class="btn ghost" id="restartBtn">Reiniciar fase</button><button class="btn ghost" id="pMapBtn">Mapa</button><button class="btn ghost" id="pExitBtn">Sair do jogo</button></div>
   <button class="btn ghost" id="musicBtn">Música: ligada</button>
+</section>
+
+<section id="sair" class="screen dim hidden">
+  <h2 class="logo out" style="font-size:clamp(36px,6vw,64px)">Sair do jogo?</h2>
+  <p class="note out">Você volta para a tela inicial. Os pontos desta fase não serão salvos, mas as fases que você já liberou continuam no mapa.</p>
+  <div class="row"><button class="btn" id="sairSim">Sim, sair</button><button class="btn ghost" id="sairNao">Continuar jogando</button></div>
 </section>
 
 <section id="title" class="screen dim hidden">
   <h1 class="logo out">Motoca<small>Rua da Adega</small></h1>
   <p class="note out">O Doutor Carimbo, chefe da Repartição, encheu a rua de papelada para travar a Adega do Edu. Corra, junte as moedas do caixa e chegue até a placa.</p>
-  <div class="row"><button class="btn" id="startBtn">Começar</button><button class="btn ghost" id="treinoBtn">Treino</button><button class="btn ghost hidden" id="contBtn"></button><button class="btn ghost" id="rankBtn">Ranking</button></div>
+  <div class="row"><button class="btn" id="startBtn">Começar</button><button class="btn ghost" id="treinoBtn">Treino</button><button class="btn ghost hidden" id="contBtn"></button><button class="btn ghost" id="rankBtn">Ranking</button><a class="btn ghost hidden" id="voltarAdega" href="../">Voltar à Adega</a></div>
   <p class="note out" id="contaInfo" style="font-size:16px"></p>
   <p class="note out" id="keysNote" style="font-size:16px">Teclado: setas ou A/D para correr, espaço ou W para pular.</p>
 </section>
@@ -2832,7 +2843,7 @@ function drawZoneDeco(c, k, z, t){
 }
 function showTitle(){
   closeMap();
-  ['done','over'].forEach(id => $(id).classList.add('hidden'));
+  ['done','over','sair','pause'].forEach(id => $(id).classList.add('hidden'));
   ['hud','lives','seloHud','bossHud','touch'].forEach(id => $(id).classList.add('hidden'));
   G.state = 'title'; refreshTitle(); $('title').classList.remove('hidden'); $('pauseBtn').classList.add('hidden'); playSong('mapa');
 }
@@ -2852,6 +2863,11 @@ function setPause(on){
   musUpdate();
 }
 $('pauseBtn').onclick = () => { audio(); setPause(true); };
+function pedirSair(){ audio(); setPause(true); $('pause').classList.add('hidden'); $('sair').classList.remove('hidden'); }
+$('exitBtn').onclick = pedirSair; $('pExitBtn').onclick = pedirSair;
+$('sairNao').onclick = () => { $('sair').classList.add('hidden'); setPause(false); };
+$('sairSim').onclick = () => { $('sair').classList.add('hidden'); setPause(false); showTitle(); };
+if (/github\.io$/.test(location.hostname)) $('voltarAdega').classList.remove('hidden');
 $('resumeBtn').onclick = () => setPause(false);
 $('restartBtn').onclick = () => { setPause(false); G.score = G.actStartScore || 0; startAct(G.act, false, G.training); };
 $('pMapBtn').onclick = () => { setPause(false); openMap({ from: G.act, to: G.act }); };
