@@ -94,6 +94,7 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 #pauseBtn.hidden + #exitBtn{display:none}
 #sair{z-index:16}
 a.btn{text-decoration:none}
+.btn.share{background:#25d366;color:#0b2e1a;font-size:20px;margin-top:10px}
 #muteBtn{position:fixed;top:calc(10px + env(safe-area-inset-top,0px));right:calc(10px + env(safe-area-inset-right,0px));border:0;border-radius:999px;
   background:rgba(26,11,18,.55);color:var(--text);font-family:inherit;font-weight:800;font-size:15px;padding:6px 14px;cursor:pointer}
 #loading{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;font-weight:800;font-size:22px}
@@ -171,6 +172,7 @@ a.btn{text-decoration:none}
       <div class="tally out" id="tally"></div>
       <p class="note out" id="seloNote"></p>
       <div class="row"><button class="btn" id="againBtn">Próximo ato</button><button class="btn ghost" id="menuBtn">Início</button></div>
+      <button class="btn share" id="shareBtn">Compartilhar no WhatsApp</button>
     </div>
     <div id="eduBox" class="edu hidden"><b>Você sabia?</b><h3 id="eduTitle"></h3><p id="eduText"></p></div>
   </div>
@@ -2482,7 +2484,7 @@ function finish(){
     $('doneTitle').textContent = 'Treino concluído!';
     $('tally').innerHTML = `<span>Tempo ${tm}</span><b>${tb}</b><span>Moedas ${G.ringsN}</span><b>${rb}</b><span>Total</span><b>${total}</b>`;
     $('seloNote').textContent = 'Agora você já sabe jogar. No jogo de verdade não tem mais dica: boa sorte contra o Doutor Carimbo!';
-    $('eduBox').classList.add('hidden'); $('againBtn').textContent = 'Começar o jogo';
+    $('eduBox').classList.add('hidden'); $('againBtn').textContent = 'Começar o jogo'; $('shareBtn').classList.add('hidden');
     againAction = () => startAct(1, true); $('done').classList.remove('hidden'); return;
   }
   const actPts = total - (G.actStartScore || 0), rkey = 'motoca-rec-' + G.act; let rec = null;
@@ -2491,6 +2493,7 @@ function finish(){
   const best = { pts: Math.max(actPts, rec ? rec.pts : 0), time: Math.min(secs, rec && rec.time != null ? rec.time : secs) };
   try { localStorage.setItem(rkey, JSON.stringify(best)); } catch(e) {}
   if (newRec) enviarRecorde(G.act, best);
+  G.lastShare = { pts: actPts, act: G.act, tm, label: LV.sub + ' · ' + LV.name, docs: [1, 2, 3, 4, 5, 6].filter(k => G.docs[k]).length, rec: newRec }; $('shareBtn').classList.remove('hidden');
   const zoneEnd = G.act % 3 === 0, Z = LV.zone, actN = ((G.act - 1) % 3) + 1, got = !!G.docs[Z], last = G.act >= BUILT;
   $('doneTitle').textContent = zoneEnd ? `Zona ${Z} concluída!` : `Ato ${actN} concluído!`;
   $('tally').innerHTML = `<span>Tempo ${tm}</span><b>${tb}</b><span>Moedas ${G.ringsN}</span><b>${rb}</b><span>Pontos</span><b>${base}</b><span>Total</span><b>${total}</b><span>${newRec ? 'Novo recorde da fase!' : 'Recorde da fase'}</span><b>${best.pts}</b>`;
@@ -2528,6 +2531,43 @@ function startAct(n, fresh, training){
 }
 function startGame(){ startAct(1, true); }
 /* ---------- Conta da Adega do Edu e ranking online ---------- */
+/* ---------- Compartilhar ---------- */
+const SITE_MOTOCA = 'https://adegadoedu.github.io/motoca/';
+function shareCard(r){
+  const cv = document.createElement('canvas'); cv.width = 1080; cv.height = 1350; const c = cv.getContext('2d');
+  const bg = c.createLinearGradient(0, 0, 0, 1350); bg.addColorStop(0, '#8a1a38'); bg.addColorStop(1, '#2a0a14'); c.fillStyle = bg; c.fillRect(0, 0, 1080, 1350);
+  // prédios ao fundo
+  let x = -20, k = 0; while (x < 1100) { const w = 90 + (k * 37) % 70, h = 160 + (k * 53) % 170; c.fillStyle = k % 2 ? '#4a1222' : '#5a1a2c'; c.fillRect(x, 820 - h, w, h);
+    c.fillStyle = 'rgba(255,210,63,.55)'; for (let yy = 820 - h + 22; yy < 800; yy += 38) for (let xx = x + 14; xx < x + w - 20; xx += 30) if ((xx + yy + k) % 3) c.fillRect(xx, yy, 14, 18); x += w + 8; k++; }
+  c.fillStyle = '#3a0f1c'; c.fillRect(0, 818, 1080, 10);
+  // toldo listrado
+  for (let i = 0; i < 12; i++) { c.fillStyle = i % 2 ? '#fff6e6' : '#d7263d'; c.fillRect(i * 90, 0, 90, 70); c.beginPath(); c.arc(i * 90 + 45, 70, 45, 0, Math.PI); c.fill(); }
+  const txt = (t, y, size, col, stroke) => { c.font = `800 ${size}px "Baloo 2", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'alphabetic';
+    if (stroke) { c.lineJoin = 'round'; c.lineWidth = size * 0.14; c.strokeStyle = '#1a0b12'; c.strokeText(t, 540, y); } c.fillStyle = col; c.fillText(t, 540, y); };
+  txt('MOTOCA', 285, 170, '#ffd23f', true);
+  txt('Aventura da Adega do Edu', 360, 54, '#fff8ec', true);
+  c.save(); c.translate(540, 600); c.scale(6, 6); drawToken(c, 0, 0, 1); c.restore();
+  c.fillStyle = 'rgba(26,11,18,.6)'; roundRect(c, 120, 860, 840, 250, 40); c.fill(); c.strokeStyle = '#ffd23f'; c.lineWidth = 6; c.stroke();
+  txt(r.rec ? 'NOVO RECORDE!' : 'Minha pontuação', 925, 48, r.rec ? '#ffd23f' : '#fff8ec', false);
+  txt(r.pts.toLocaleString('pt-BR') + ' pts', 1050, 130, '#ffd23f', true);
+  txt(r.label, 1170, 44, '#fff8ec', true);
+  txt(`Tempo ${r.tm}  ·  Documentos ${r.docs}/6`, 1225, 40, '#ffcf8a', true);
+  txt('Duvido você bater!', 1290, 56, '#ffffff', true);
+  c.font = '800 34px "Baloo 2", sans-serif'; c.fillStyle = '#ffd23f'; c.textAlign = 'center'; c.fillText('adegadoedu.github.io/motoca', 540, 1335);
+  return cv;
+}
+async function compartilhar(){
+  const r = G.lastShare; if (!r) return; audio();
+  const texto = `Fiz ${r.pts.toLocaleString('pt-BR')} pontos no Motoca, o jogo da Adega do Edu (${r.label})! Duvido você bater: ${SITE_MOTOCA}`;
+  let blob = null; try { blob = await new Promise(res => shareCard(r).toBlob(res, 'image/png')); } catch(e) {}
+  const file = blob ? new File([blob], 'motoca-pontuacao.png', { type: 'image/png' }) : null;
+  try { if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: texto }); return; } }
+  catch(e) { if (e && e.name === 'AbortError') return; }
+  try { if (navigator.share) { await navigator.share({ text: texto }); return; } } catch(e) { if (e && e.name === 'AbortError') return; }
+  if (blob) { try { const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = 'motoca-pontuacao.png'; document.body.appendChild(a); a.click(); a.remove(); } catch(e) {} }
+  window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
+}
+$('shareBtn').onclick = compartilhar;
 const SUPABASE_URL = 'https://pigxqmdmhnagghdzwvmu.supabase.co';
 const SUPABASE_CHAVE = 'sb_publishable_kUvkWcIttr3dcKMyab3dOA_2jW0taoi';
 async function rpc(nome, corpo){
