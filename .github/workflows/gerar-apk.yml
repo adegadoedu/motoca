@@ -1,0 +1,88 @@
+name: Gerar APK do Motoca
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main]
+    paths: ['index.html']
+
+permissions:
+  contents: write
+
+jobs:
+  apk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Baixar o jogo
+        uses: actions/checkout@v4
+
+      - name: Preparar Java
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '17'
+
+      - name: Preparar Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: Montar o app Android
+        run: |
+          mkdir -p app/www
+          cp index.html three.min.js app/www/
+          cp manifest.json icon-*.png app/www/ 2>/dev/null || true
+          cd app
+          npm init -y > /dev/null
+          npm install @capacitor/core@6 @capacitor/cli@6 @capacitor/android@6
+          npx cap init "Motoca" "br.com.adegadoedu.motoca" --web-dir www
+          npx cap add android
+          cd android
+          # tela deitada e tela cheia
+          sed -i 's|android:name=".MainActivity"|android:name=".MainActivity"\n            android:screenOrientation="sensorLandscape"|' app/src/main/AndroidManifest.xml
+          sed -i 's|<item name="windowNoTitle">true</item>|<item name="windowNoTitle">true</item>\n        <item name="android:windowFullscreen">true</item>|' app/src/main/res/values/styles.xml
+          # icone do Motoca
+          rm -rf app/src/main/res/mipmap-anydpi-v26
+          for d in app/src/main/res/mipmap-*; do
+            cp ../www/icon-192.png "$d/ic_launcher.png"
+            cp ../www/icon-192.png "$d/ic_launcher_round.png"
+            rm -f "$d/ic_launcher_foreground.png"
+          done
+          # tela de abertura do Motoca
+          find app/src/main/res -name 'splash.png' -delete
+          mkdir -p app/src/main/res/drawable-xxhdpi
+          cp ../www/icon-512.png app/src/main/res/drawable-xxhdpi/splash_icon.png
+          printf '%s\n' '<?xml version="1.0" encoding="utf-8"?>' '<layer-list xmlns:android="http://schemas.android.com/apk/res/android">' '  <item><color android:color="#7a1530"/></item>' '  <item><bitmap android:gravity="center" android:src="@drawable/splash_icon"/></item>' '</layer-list>' > app/src/main/res/drawable/splash.xml
+          # numero da versao
+          sed -i "s/versionCode 1$/versionCode ${{ github.run_number }}/" app/build.gradle
+          sed -i "s/versionName \"1.0\"/versionName \"1.${{ github.run_number }}\"/" app/build.gradle
+          chmod +x gradlew
+          ./gradlew assembleRelease --no-daemon
+
+      - name: Assinar o APK
+        env:
+          KS_B64: ${{ secrets.ANDROID_KEYSTORE }}
+          KS_PASS: ${{ secrets.ANDROID_KEY_PASS }}
+        run: |
+          cd app/android
+          if [ -z "$KS_B64" ] || [ -z "$KS_PASS" ]; then
+            echo "::warning::Segredos ANDROID_KEYSTORE e ANDROID_KEY_PASS nao encontrados. Usando chave temporaria (o app nao vai atualizar por cima da versao anterior)."
+            KS_PASS=temporaria123
+            keytool -genkeypair -keystore motoca.jks -alias motoca -keyalg RSA -keysize 2048 -validity 10000 -storepass "$KS_PASS" -keypass "$KS_PASS" -dname "CN=Motoca"
+          else
+            echo "$KS_B64" | base64 -d > motoca.jks
+          fi
+          BT=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -1)
+          "$BT/zipalign" -p -f 4 app/build/outputs/apk/release/app-release-unsigned.apk alinhado.apk
+          "$BT/apksigner" sign --ks motoca.jks --ks-key-alias motoca --ks-pass "pass:$KS_PASS" --key-pass "pass:$KS_PASS" --out ../../motoca.apk alinhado.apk
+          "$BT/apksigner" verify ../../motoca.apk
+          rm -f motoca.jks
+
+      - name: Publicar para download
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v1.${{ github.run_number }}
+          name: Motoca 1.${{ github.run_number }}
+          body: "Baixe o arquivo motoca.apk abaixo e abra no celular Android."
+          files: motoca.apk
+          make_latest: true
