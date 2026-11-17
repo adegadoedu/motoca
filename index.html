@@ -108,6 +108,10 @@ a.btn{text-decoration:none}
 @media (max-height:420px){ #mapPanel{padding:4px 10px} #mapPanel .btn{font-size:16px;padding:4px 14px 2px} #mapTitle{font-size:16px} #mapSub{font-size:13px} .mapInfo{min-width:0} }
 #mapPanel .row{gap:10px;flex-wrap:nowrap}
 #rankScreen{z-index:25;background:rgba(18,10,30,.98)}
+#loginScreen{z-index:26;background:#140a1e!important}
+.campo{width:min(340px,86vw);font-family:inherit;font-weight:700;font-size:20px;padding:10px 16px;border-radius:14px;border:3px solid #ffd23f;background:#fff8ec;color:#1a0b12;outline:none}
+#loginErro{color:#ff8a8a;min-height:22px}
+#contaInfo button.link{background:none;border:0;padding:0;font:inherit;color:var(--amber);text-decoration:underline;cursor:pointer}
 .rank{list-style:none;margin:0;padding:0;width:min(560px,100%);max-height:52vh;overflow:auto;background:rgba(26,11,18,.7);border-radius:16px;box-shadow:0 0 0 3px var(--ink)}
 .rank li{display:grid;grid-template-columns:48px 1fr auto;gap:10px;align-items:center;padding:7px 14px;font-weight:700;font-size:17px;border-bottom:1px solid rgba(255,255,255,.08);text-align:left}
 .rank li.eu{background:rgba(255,210,63,.18)}
@@ -197,6 +201,15 @@ a.btn{text-decoration:none}
   <p class="note out" id="rankInfo"></p>
   <ol id="rankList" class="rank"></ol>
   <button class="btn" id="rankClose">Voltar</button>
+</section>
+<section id="loginScreen" class="screen dim hidden" aria-label="Entrar com a conta da Adega">
+  <h2 class="logo out" style="font-size:clamp(30px,5vw,54px)">Entrar com a conta da Adega</h2>
+  <p class="note out" style="font-size:16px">Use o mesmo apelido e senha do jogo da Adega do Edu.</p>
+  <input class="campo" id="loginNome" placeholder="Apelido" autocomplete="username" autocapitalize="none" maxlength="30">
+  <input class="campo" id="loginSenha" type="password" placeholder="Senha" autocomplete="current-password" maxlength="60">
+  <p class="note out" id="loginErro"></p>
+  <div class="row"><button class="btn" id="loginOk">Entrar</button><button class="btn ghost" id="loginVoltar">Voltar</button></div>
+  <p class="note out" style="font-size:15px">Ainda não tem conta? <a href="https://adegadoedu.github.io/Tycoon/" style="color:var(--amber)">Crie no jogo da Adega</a> e, lá, crie uma senha. Depois volte aqui e entre.</p>
 </section>
 <div id="rotate"><div style="font-size:44px">↻</div>Gire o celular para jogar deitado</div>
 
@@ -299,6 +312,7 @@ const inp = { l:0, r:0, j:0 }; let jPrev = 0;
 const KMAP = { ArrowLeft:'l', a:'l', A:'l', ArrowRight:'r', d:'r', D:'r', ' ':'j', ArrowUp:'j', w:'j', W:'j', z:'j', Z:'j', x:'j', X:'j', k:'j', K:'j' };
 const keys = {};
 addEventListener('keydown', e => {
+  if (e.target && e.target.tagName === 'INPUT') return;
   if (G.state === 'map') { audio(); mapKey(e); return; }
   if ((e.key === 'Escape' || e.key === 'p' || e.key === 'P') && (G.state === 'play' || G.state === 'card')) { setPause(!G.paused); e.preventDefault(); return; }
   if (G.paused) return;
@@ -2578,10 +2592,28 @@ async function rpc(nome, corpo){
   if (!r.ok) throw new Error((d && d.message) || ('erro ' + r.status));
   return d;
 }
-function contaAdega(){
+function contaSite(){
   try { const S = JSON.parse(localStorage.getItem('adegaEdu.tycoon.v1') || 'null'); const p = S && S.perfil; if (p && p.id && p.token && p.apelido) return { id: p.id, token: p.token, apelido: p.apelido }; } catch(e) {}
   return null;
 }
+function contaMotoca(){ try { const c = JSON.parse(localStorage.getItem('motoca-conta') || 'null'); if (c && c.id && c.token && c.apelido) return c; } catch(e) {} return null; }
+function contaAdega(){ return contaSite() || contaMotoca(); }
+const MSG_LOGIN = { invalido: 'Apelido ou senha incorretos.', bloqueado: 'Muitas tentativas erradas. Espere 15 minutos e tente de novo.', sem_senha: 'Esse apelido ainda não tem senha. Abra o jogo da Adega no aparelho onde ele foi criado e crie uma senha por lá.' };
+function abrirLogin(){ audio(); $('loginErro').textContent = ''; $('loginSenha').value = ''; $('loginScreen').classList.remove('hidden'); setTimeout(() => $('loginNome').focus(), 60); }
+async function fazerLogin(){
+  const btn = $('loginOk'), err = $('loginErro'), nome = $('loginNome').value.trim(), senha = $('loginSenha').value;
+  if (btn.disabled) return;
+  if (nome.length < 2 || !senha) { err.textContent = 'Digite o apelido e a senha.'; return; }
+  btn.disabled = true; btn.textContent = 'Entrando…'; err.textContent = '';
+  try {
+    const r = await rpc('entrar', { p_apelido: nome, p_senha: senha }); const l = Array.isArray(r) ? r[0] : r;
+    if (!l || l.status !== 'ok') { err.textContent = MSG_LOGIN[l && l.status] || MSG_LOGIN.invalido; return; }
+    try { localStorage.setItem('motoca-conta', JSON.stringify({ id: l.jogador_id, token: l.chave, apelido: l.apelido })); } catch(e) {}
+    $('loginScreen').classList.add('hidden'); mostrarConta(); recSync = false; sincronizarRecordes(); sfx('check');
+  } catch(e) { err.textContent = 'Sem conexão com a internet. Tente de novo.'; }
+  finally { btn.disabled = false; btn.textContent = 'Entrar'; $('loginSenha').value = ''; }
+}
+function sairConta(){ try { localStorage.removeItem('motoca-conta'); } catch(e) {} mostrarConta(); }
 function lerRec(a){ try { return JSON.parse(localStorage.getItem('motoca-rec-' + a) || 'null'); } catch(e) { return null; } }
 function enviarRecorde(a, rec){
   const c = contaAdega(); if (!c || !rec) return Promise.resolve();
@@ -2594,8 +2626,11 @@ async function sincronizarRecordes(){
 }
 function mostrarConta(){
   const el = $('contaInfo'), c = contaAdega(); el.textContent = '';
-  if (c) { el.append('Jogando como '); const b = document.createElement('b'); b.textContent = c.apelido; el.append(b, '. Seus recordes entram no ranking.'); }
-  else { el.append('Sem conta: os recordes ficam só neste aparelho. '); const a = document.createElement('a'); a.href = 'https://adegadoedu.github.io/Tycoon/'; a.textContent = 'Crie sua conta no jogo da Adega'; el.append(a, '.'); }
+  const bt = (txt, fn) => { const b = document.createElement('button'); b.className = 'link'; b.type = 'button'; b.textContent = txt; b.onclick = fn; return b; };
+  if (c) { el.append('Jogando como '); const b = document.createElement('b'); b.textContent = c.apelido; el.append(b, '. Seus recordes entram no ranking.');
+    if (!contaSite()) el.append(' ', bt('Sair da conta', sairConta)); }
+  else { el.append('Sem conta: os recordes ficam só neste aparelho. ', bt('Entrar com a conta da Adega', abrirLogin), ' ou ');
+    const a = document.createElement('a'); a.href = 'https://adegadoedu.github.io/Tycoon/'; a.textContent = 'criar conta'; el.append(a, '.'); }
 }
 async function abrirRanking(){
   audio(); const scr = $('rankScreen'), list = $('rankList'), info = $('rankInfo'), c = contaAdega();
@@ -2618,6 +2653,9 @@ async function abrirRanking(){
 $('rankBtn').onclick = abrirRanking;
 $('mapRank').onclick = abrirRanking;
 $('rankClose').onclick = () => $('rankScreen').classList.add('hidden');
+$('loginOk').onclick = fazerLogin; $('loginVoltar').onclick = () => $('loginScreen').classList.add('hidden');
+$('loginSenha').addEventListener('keydown', e => { if (e.key === 'Enter') fazerLogin(); });
+$('loginNome').addEventListener('keydown', e => { if (e.key === 'Enter') $('loginSenha').focus(); });
 function refreshTitle(){
   mostrarConta();
   const n = Math.min(BUILT + 1, loadNum('motoca-ato')), cb = $('contBtn');
