@@ -2559,6 +2559,7 @@ function shareCard(r){
 async function compartilhar(){
   const r = G.lastShare; if (!r) return; audio();
   const texto = `Fiz ${r.pts.toLocaleString('pt-BR')} pontos no Motoca, o jogo da Adega do Edu (${r.label})! Duvido você bater: ${SITE_MOTOCA}`;
+  if (window.Capacitor) { location.href = 'https://wa.me/?text=' + encodeURIComponent(texto); return; }
   let blob = null; try { blob = await new Promise(res => shareCard(r).toBlob(res, 'image/png')); } catch(e) {}
   const file = blob ? new File([blob], 'motoca-pontuacao.png', { type: 'image/png' }) : null;
   try { if (file && navigator.canShare && navigator.canShare({ files: [file] })) { await navigator.share({ files: [file], text: texto }); return; } }
@@ -2908,6 +2909,7 @@ $('exitBtn').onclick = pedirSair; $('pExitBtn').onclick = pedirSair;
 $('sairNao').onclick = () => { $('sair').classList.add('hidden'); setPause(false); };
 $('sairSim').onclick = () => { $('sair').classList.add('hidden'); setPause(false); showTitle(); };
 if (/github\.io$/.test(location.hostname)) $('voltarAdega').classList.remove('hidden');
+if (window.Capacitor) { $('voltarAdega').href = 'https://adegadoedu.github.io/'; $('voltarAdega').classList.remove('hidden'); }
 $('resumeBtn').onclick = () => setPause(false);
 $('restartBtn').onclick = () => { setPause(false); G.score = G.actStartScore || 0; startAct(G.act, false, G.training); };
 $('pMapBtn').onclick = () => { setPause(false); openMap({ from: G.act, to: G.act }); };
