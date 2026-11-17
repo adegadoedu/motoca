@@ -160,7 +160,7 @@ a.btn{text-decoration:none}
 <section id="title" class="screen dim hidden">
   <h1 class="logo out">Motoca<small>Rua da Adega</small></h1>
   <p class="note out">O Doutor Carimbo, chefe da Repartição, encheu a rua de papelada para travar a Adega do Edu. Corra, junte as moedas do caixa e chegue até a placa.</p>
-  <div class="row"><button class="btn" id="startBtn">Começar</button><button class="btn ghost" id="treinoBtn">Treino</button><button class="btn ghost hidden" id="contBtn"></button><button class="btn ghost" id="rankBtn">Ranking</button><a class="btn ghost hidden" id="voltarAdega" href="../">Voltar à Adega</a></div>
+  <div class="row"><button class="btn" id="startBtn">Começar</button><button class="btn ghost" id="treinoBtn">Treino</button><button class="btn ghost hidden" id="contBtn"></button><button class="btn ghost" id="rankBtn">Ranking</button><a class="btn ghost hidden" id="voltarAdega" href="https://adegadoedu.github.io/Tycoon/">Voltar à Adega</a></div>
   <p class="note out" id="contaInfo" style="font-size:16px"></p>
   <p class="note out" id="keysNote" style="font-size:16px">Teclado: setas ou A/D para correr, espaço ou W para pular.</p>
 </section>
@@ -2595,7 +2595,7 @@ async function sincronizarRecordes(){
 function mostrarConta(){
   const el = $('contaInfo'), c = contaAdega(); el.textContent = '';
   if (c) { el.append('Jogando como '); const b = document.createElement('b'); b.textContent = c.apelido; el.append(b, '. Seus recordes entram no ranking.'); }
-  else { el.append('Sem conta: os recordes ficam só neste aparelho. '); const a = document.createElement('a'); a.href = '../'; a.textContent = 'Crie sua conta no jogo da Adega'; el.append(a, '.'); }
+  else { el.append('Sem conta: os recordes ficam só neste aparelho. '); const a = document.createElement('a'); a.href = 'https://adegadoedu.github.io/Tycoon/'; a.textContent = 'Crie sua conta no jogo da Adega'; el.append(a, '.'); }
 }
 async function abrirRanking(){
   audio(); const scr = $('rankScreen'), list = $('rankList'), info = $('rankInfo'), c = contaAdega();
@@ -2909,7 +2909,7 @@ $('exitBtn').onclick = pedirSair; $('pExitBtn').onclick = pedirSair;
 $('sairNao').onclick = () => { $('sair').classList.add('hidden'); setPause(false); };
 $('sairSim').onclick = () => { $('sair').classList.add('hidden'); setPause(false); showTitle(); };
 if (/github\.io$/.test(location.hostname)) $('voltarAdega').classList.remove('hidden');
-if (window.Capacitor) { $('voltarAdega').href = 'https://adegadoedu.github.io/'; $('voltarAdega').classList.remove('hidden'); }
+if (window.Capacitor) { $('voltarAdega').href = 'https://adegadoedu.github.io/Tycoon/'; $('voltarAdega').classList.remove('hidden'); }
 $('resumeBtn').onclick = () => setPause(false);
 $('restartBtn').onclick = () => { setPause(false); G.score = G.actStartScore || 0; startAct(G.act, false, G.training); };
 $('pMapBtn').onclick = () => { setPause(false); openMap({ from: G.act, to: G.act }); };
