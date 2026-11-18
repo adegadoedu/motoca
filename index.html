@@ -30,6 +30,7 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 #hud .warn{color:#ff4d5e}
 #lives{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(100px + env(safe-area-inset-top,0px));pointer-events:none;
   font-weight:800;font-size:20px;display:flex;align-items:center;gap:6px}
+#frz{position:fixed;top:calc(52px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-weight:800;font-size:22px;color:#8fd3ff;pointer-events:none;z-index:6}
 #lives.low{top:calc(128px + env(safe-area-inset-top,0px))}
 #lives i{display:inline-block;width:22px;height:18px;border-radius:11px 11px 4px 4px;background:#d7263d;box-shadow:inset -6px -3px 0 #8a1424,0 0 0 2px var(--ink)}
 #seloHud{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(110px + env(safe-area-inset-right,0px));width:30px;height:30px;border-radius:50%;
@@ -147,6 +148,7 @@ a.btn{text-decoration:none}
   <span class="k" id="hRingK">Moedas</span><span class="v" id="hRings">0</span>
   <span class="k hidden" id="hGoldK">Selos</span><span class="v hidden" id="hGold">0/3</span>
 </div>
+<div id="frz" class="out hidden"></div>
 <div id="lives" class="out hidden"><i></i><span id="hLives">×3</span></div>
 <div id="seloHud" class="hidden" title="Documento"></div>
 <div id="bossHud" class="out hidden"><span id="bossName">Dr. Carimbo</span><span id="bossPips"></span></div>
@@ -288,6 +290,7 @@ const SONGS = {
   5: { bpm: 116, root: 57, lw: 'triangle', lv: 0.055, lead: [0,null,3,null,7,null,10,null, 8,null,7,null,3,null,null,null, 5,null,8,null,12,null,10,null, 7,null,5,null,3,null,null,null], bass: [0,null,null,0,null,null,-5,null, -4,null,null,-4,null,null,-2,null], hat: true },
   6: { bpm: 108, root: 60, lead: [0,null,7,null,12,null,11,null, 9,null,7,null,5,null,4,null, 2,null,7,null,11,null,9,null, 7,null,null,null,null,null,null,null], bass: [0,null,null,null,-5,null,null,null, -3,null,null,null,-7,null,null,null] },
   7: { bpm: 126, root: 62, lw: 'triangle', lv: 0.06, lead: [0,null,3,5,7,null,5,3, 2,null,null,null,7,null,10,null, 8,null,7,5,3,null,5,7, 3,null,2,null,0,null,null,null], bass: [0,null,7,null,0,null,7,null, -2,null,5,null,-2,null,5,null], hat: true },
+  8: { bpm: 132, root: 57, lead: [0,null,0,7,null,7,5,null, 3,null,3,5,null,7,null,null, 0,null,0,7,null,10,8,null, 7,null,5,3,2,null,null,null], bass: [0,0,null,0,0,null,0,null, -2,-2,null,-2,-2,null,-2,null], hat: true, kick: true },
   chefe: { bpm: 160, root: 57, lead: [0,null,3,null,7,null,6,null, 5,null,3,null,1,null,0,null, 0,null,3,null,7,null,10,null, 8,7,5,3,1,null,null,null], bass: [0,0,0,0,0,0,0,0, -4,-4,-4,-4,-2,-2,-2,-2], hat: true, kick: true }
 };
 const MUS = { name: null, step: 0, next: 0, gain: null, noise: null, iv: null };
@@ -375,11 +378,11 @@ stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercan
 function readInput(){ inp.l = keys.l || touchHeld.l ? 1 : 0; inp.r = keys.r || touchHeld.r ? 1 : 0; inp.j = keys.j || touchHeld.j ? 1 : 0; inp.d = keys.d || touchHeld.d ? 1 : 0; }
 
 /* ---------- Fase (lógica) ---------- */
-let crushers = [], hints = [], pwalls = [], drops = [], shots = [], golds = [];
+let crushers = [], hints = [], pwalls = [], drops = [], shots = [], golds = [], clocks = [], gearsDeco = [];
 let grid, rings, boxes, enemies, springs, cones, checks, plats, loose, pads, belts, buttons, doors, cubes, vents, spawners, rollers, selo, goal, boss, npc, LV;
-const BUILT = 21;
-const DOCNAME = { 1: 'CNPJ', 2: 'Alvará', 3: 'Vistoria dos Bombeiros', 4: 'Licença Sanitária', 5: 'Inscrição Estadual', 6: 'Certidão Negativa', 7: 'Contrato Social' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2', 3: 'motoca-doc3', 4: 'motoca-doc4', 5: 'motoca-doc5', 6: 'motoca-doc6', 7: 'motoca-doc7' };
-const DOCPOP = { 1: 'CNPJ conquistado!', 2: 'Alvará conquistado!', 3: 'Vistoria dos Bombeiros conquistada!', 4: 'Licença Sanitária conquistada!', 5: 'Inscrição Estadual conquistada!', 6: 'Certidão Negativa conquistada!', 7: 'Contrato Social conquistado!' };
+const BUILT = 24;
+const DOCNAME = { 1: 'CNPJ', 2: 'Alvará', 3: 'Vistoria dos Bombeiros', 4: 'Licença Sanitária', 5: 'Inscrição Estadual', 6: 'Certidão Negativa', 7: 'Contrato Social', 8: 'Registro do Funcionário' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2', 3: 'motoca-doc3', 4: 'motoca-doc4', 5: 'motoca-doc5', 6: 'motoca-doc6', 7: 'motoca-doc7', 8: 'motoca-doc8' };
+const DOCPOP = { 1: 'CNPJ conquistado!', 2: 'Alvará conquistado!', 3: 'Vistoria dos Bombeiros conquistada!', 4: 'Licença Sanitária conquistada!', 5: 'Inscrição Estadual conquistada!', 6: 'Certidão Negativa conquistada!', 7: 'Contrato Social conquistado!', 8: 'Registro do Funcionário conquistado!' };
 const ACTS = {
   1: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 1', sky:'day', facade:{ x:245.5, kind:'adega' }, sign:true },
   2: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 2', sky:'sunset', facade:null },
@@ -401,12 +404,15 @@ const ACTS = {
   18: { zone:6, theme:'palace', name:'Palácio da Burocracia', sub:'Zona 6 · Ato final', sky:'palace', facade:null },
   19: { zone:7, season:2, theme:'cartorio', name:'Cartório das Firmas', sub:'Zona 7 · Ato 1', sky:'cartorio', facade:null, tip:'arrancada' },
   20: { zone:7, season:2, theme:'cartorio', name:'Cartório das Firmas', sub:'Zona 7 · Ato 2 · Escalada', sky:'cartorio', facade:null, vertical:true, start:{ x: 10 * 16 + 8, y: 13 * 16 }, tip:'parede' },
-  21: { zone:7, season:2, theme:'cartorio', name:'Cartório das Firmas', sub:'Zona 7 · Ato 3', sky:'cartorio', facade:null, bossSign:true }
+  21: { zone:7, season:2, theme:'cartorio', name:'Cartório das Firmas', sub:'Zona 7 · Ato 3', sky:'cartorio', facade:null, bossSign:true },
+  22: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 1', sky:'fabrica', facade:null, tip:'ponto' },
+  23: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 2 · Perseguição', sky:'fabrica', facade:null, tip:'prazo' },
+  24: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 3', sky:'fabrica', facade:null, bossSign:true }
 };
 function newGrid(cols, top=0){
   COLS = cols; TOPX = top; grid = Array.from({ length: ROWS }, () => Array(COLS).fill('.'));
   for (let r = -TOPX; r < 0; r++) grid[r] = Array(COLS).fill('.');
-  pwalls = []; drops = []; shots = []; golds = [];
+  pwalls = []; drops = []; shots = []; golds = []; clocks = []; gearsDeco = [];
   rings = []; boxes = []; enemies = []; springs = []; cones = []; checks = []; plats = []; loose = []; pads = []; belts = []; buttons = []; doors = []; cubes = []; vents = []; spawners = []; rollers = []; crushers = []; hints = [];
   selo = null; goal = null; boss = null; npc = null;
 }
@@ -418,7 +424,7 @@ const ringLine = (tx, n, ty, step=1) => { for (let i = 0; i < n; i++) rings.push
 const ringCol = (tx, n, ty) => { for (let i = 0; i < n; i++) rings.push({ x: tx * T + 8, y: (ty - i) * T + 8, alive:true }); };
 const ringArc = (tx, n, ty, h) => { for (let i = 0; i < n; i++) { const k = i / (n - 1); rings.push({ x:(tx + i) * T + 8, y: ty * T + 8 - Math.sin(k * Math.PI) * h, alive:true }); } };
 const box = (tx, ty, item) => boxes.push({ x: tx * T + 8, y: (ty + 1) * T, item, alive:true });
-const enemy = (type, tx, range, ty=13) => enemies.push({ type, x: tx * T + 8, y: ty * T, x0: tx * T + 8 - range * T, x1: tx * T + 8 + range * T, vx: (type === 'carrinho' || type === 'garrafa') ? -1.6 : -0.6, t: Math.random() * 100, alive:true, baseY: ty * T });
+const enemy = (type, tx, range, ty=13) => enemies.push({ type, x: tx * T + 8, y: ty * T, x0: tx * T + 8 - range * T, x1: tx * T + 8 + range * T, vx: (type === 'carrinho' || type === 'garrafa' || type === 'engrenagem') ? -1.6 : -0.6, t: Math.random() * 100, alive:true, baseY: ty * T });
 const spring = (tx, ty=13, pow=-9.6) => springs.push({ x: tx * T + 8, y: ty * T, pow, comp:0 });
 const cone = (tx, ty=13) => cones.push({ x: tx * T + 8, y: ty * T });
 const plat = (tx, ty, range, speed=0.02) => plats.push({ x0: tx * T, x: tx * T, y: ty * T, w: 48, range: range * T, sp: speed, t: 0, dx: 0 });
@@ -437,6 +443,9 @@ const checkpoint = (tx, ty=13) => checks.push({ x: tx * T + 8, y: ty * T, on:fal
 const pwall = (tx, ty0=8, ty1=13) => { pwalls.push({ tx, ty0, ty1, alive: true }); for (let y = ty0; y < ty1; y++) setT(tx, y, 'W'); };
 const drop = (tx, h=1, near=110) => drops.push({ tx, x: tx * T + 8, h, near, state: 'wait', t: 0, y: 0, vy: 0, land: 0 });
 const gold = (tx, ty) => golds.push({ x: tx * T + 8, y: ty * T + 8, got: false, had: false });
+const clock = (tx, ty=13) => clocks.push({ x: tx * T + 8, y: ty * T, cd: 0 });
+const gearWheel = (tx, ty, r, n=4, sp=0.015) => { const cx = tx * T + 8, cy = ty * T; gearsDeco.push({ x: cx, y: cy, r: r * T, n, first: plats.length });
+  for (let i = 0; i < n; i++) { const ph = i * Math.PI * 2 / n; plats.push({ axis: 'c', cx, cy, range: r * T, ph, sp, t: 0, w: 48, x: cx + Math.cos(ph) * r * T - 24, y: cy + Math.sin(ph) * r * T, x0: 0, dx: 0, dy: 0 }); } };
 
 function levelTreino(){
   newGrid(110);
@@ -966,6 +975,74 @@ function level21(){
   blocks(72, 76, 0, 13);
   boss = { kind:'tabeliao', a0:56, a1:72, x:(72 - 3) * T + 8, y:13 * T - 320, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, sx:0, sy:0, lean:0, waves:[] };
 }
+/* ---------- Temporada 2 · Zona 8: Fábrica da Folha ---------- */
+function level22(){
+  newGrid(330);
+  ground(0, 46); ringLine(4, 4, 12);
+  npc = { x: 8 * T + 8, y: 13 * T, said: false, text: 'Zé: a Adega vai contratar o primeiro funcionário! Tem que registrar tudo direitinho.' };
+  clock(15);
+  belt(19, 40, -1); crusher(23, 0); crusher(28, 30); crusher(33, 60); crusher(38, 90); ringLine(21, 16, 12);
+  gearWheel(52, 9, 3.5, 4, 0.014); ringArc(47, 11, 5, 26); gold(52, 3);
+  ground(58, 146);
+  checkpoint(61);
+  enemy('engrenagem', 72, 5); ringLine(66, 4, 12); enemy('engrenagem', 86, 4); ringLine(80, 4, 12);
+  pwall(94, 8, 13); enemy('escrevente', 102, 3); cone(108);
+  clock(112); belt(114, 132, 1); crusher(117, 0); crusher(121, 25); crusher(125, 50); crusher(129, 75); ringLine(115, 16, 12);
+  enemy('carimbador', 128, 0); blocks(134, 136, 11, 13);
+  gearWheel(152, 8, 3.5, 4, 0.016); ringArc(147, 10, 4, 20);
+  ground(158, 330);
+  blocks(161, 175, 4, 5); ringLine(163, 11, 3); selo = { x: 173 * T + 8, y: 4 * T - 22, got: false };
+  blocks(186, 191, 4, 5); gold(188, 3);
+  checkpoint(162);
+  enemy('engrenagem', 176, 5); enemy('pombo', 190, 3); box(196, 12, 'rings');
+  pwall(204, 8, 13); enemy('cachorro', 210, 2);
+  clock(218); crusher(222, 0); crusher(226, 20); crusher(230, 40); ringLine(221, 10, 12);
+  blocks(240, 241, 4, 11); blocks(243, 244, 4, 11); gold(241, 3); ringCol(241, 4, 9);
+  checkpoint(250);
+  enemy('escrevente', 258, 4); enemy('engrenagem', 268, 4); belt(274, 290, 1); blocks(292, 294, 11, 13); enemy('carimbador', 297, 0);
+  ringLine(300, 6, 12);
+  goal = { x: 312 * T + 8, y: 13 * T, done: false };
+  blocks(326, 330, 0, 13);
+}
+function level23(){
+  newGrid(300);
+  LV.chase = { x: -300, sp: 1.45, acc: 0.0005, max: 2.3, cur: 1.45 };
+  ground(0, 44); ringLine(6, 6, 12);
+  npc = { x: 7 * T + 8, y: 13 * T, said: false, text: 'Zé: corre, Motoca! O prazo do registro está acabando!' };
+  belt(12, 30, 1); ringLine(14, 12, 12);
+  pwall(34, 8, 13);
+  ringArc(44, 5, 11, 30);
+  ground(49, 120);
+  enemy('engrenagem', 58, 3); enemy('pombo', 66, 3);
+  clock(72); crusher(76, 0); crusher(80, 25); crusher(84, 50); ringLine(75, 10, 12);
+  checkpoint(92);
+  pad(96); pwall(104, 8, 13); ringLine(97, 6, 12);
+  gearWheel(126, 9, 3.5, 5, 0.024); gold(126, 3); ringArc(121, 10, 6, 20);
+  ground(132, 300);
+  belt(136, 152, -1); blocks(153, 155, 11, 13); enemy('carimbador', 158, 0);
+  clock(162); crusher(166, 0); crusher(170, 20); crusher(174, 40); crusher(178, 60); ringLine(165, 14, 12);
+  checkpoint(184);
+  spring(190); blocks(193, 214, 5, 6); ringLine(194, 10, 4, 2); gold(212, 4);
+  enemy('engrenagem', 200, 5); enemy('cachorro', 208, 2);
+  pwall(220, 8, 13); enemy('engrenagem', 228, 3);
+  blocks(236, 237, 4, 11); blocks(239, 240, 4, 11); gold(237, 3);
+  pad(246); pwall(254, 8, 13); enemy('escrevente', 268, 3);
+  ringLine(258, 8, 12);
+  goal = { x: 284 * T + 8, y: 13 * T, done: false };
+  blocks(296, 300, 0, 13);
+}
+function level24(){
+  newGrid(76);
+  ground(0, 76); ringLine(4, 5, 12);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: a Máquina da Folha travou o registro! Bata o ponto pra ela parar!' };
+  box(19, 12, 'rings'); gold(19, 6);
+  belt(22, 32, 1); enemy('engrenagem', 36, 3);
+  clock(40); crusher(43, 0); crusher(47, 30); gold(45, 10);
+  box(50, 12, 'shield'); checkpoint(52);
+  clock(62); gold(66, 4);
+  blocks(72, 76, 0, 13);
+  boss = { kind:'maquina', a0:56, a1:72, x:(72 - 5) * T + 8, y:13 * T - 320, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, print:0 };
+}
 function rngOf(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function colTop(x){ for (let r = 0; r < ROWS; r++) if (grid[r][x] !== '.') return r; return -1; }
 function findSplit(){
@@ -1043,7 +1120,7 @@ function hardenLevel(){
   if (boss) { if (boss.kind === 'monster') { boss.hp = 12; boss.maxHp = 12; } else { boss.hp = 8; boss.maxHp = 8; } }
 }
 function buildLevel(){ if (G.training) { LV = Object.assign({}, ACTS[1], { name: 'Treino', sub: 'Aprenda a jogar', facade: null, sign: false }); levelTreino(); Object.assign(HARD, { sp: 1, hop: 45, hopV: 1.1, crUp: 100, spawn: 110 }); return; }
-  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18, 19: level19, 20: level20, 21: level21 })[G.act](); hardenLevel(); hints.length = 0;
+  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18, 19: level19, 20: level20, 21: level21, 22: level22, 23: level23, 24: level24 })[G.act](); hardenLevel(); hints.length = 0;
   if (!LV.par) LV.par = boss ? (boss.kind === 'monster' ? 110 : 85) : Math.round(COLS / 5 + 15);
   const gm2 = loadNum('motoca-gold-' + G.act); golds.forEach((g, i) => { g.had = !!(gm2 & (1 << i)); g.got = !!(G.goldRun && G.goldRun[i]); }); }
 const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 'B' : (ty < -TOPX || ty >= ROWS) ? '.' : grid[ty][tx];
@@ -1061,6 +1138,7 @@ function spawn(){
   P.charge = 0; P.charging = false; P.dashT = 0; P.wallDir = 0; P.wallT = 0; P.wallLock = 0;
   G.ringsN = 0; G.frames = c ? c.time : 0; G.lock = false; G.nextLifeAt = 100;
   if (c) checks.forEach(k => { if (k.x <= c.x) k.on = true; });
+  G.freeze = 0; if (LV && LV.chase) { LV.chase.x = P.x - 300; LV.chase.cur = LV.chase.sp; }
 }
 function moveX(){
   P.x += P.vx;
@@ -1075,7 +1153,7 @@ function moveX(){
   if (P.x < 8) { P.x = 8; P.vx = 0; }
 }
 function breakWall(tx, ty){
-  if (!(P.ball && Math.abs(P.vx) >= 3.2)) { if (P.state === 'play' && G.t - (G.wallMsg || -999) > 150 && LV && LV.season === 2) { G.wallMsg = G.t; pop(P.x, P.y - 40, isTouch ? 'Use a ARRANCADA!' : 'Use a arrancada (↓ ou Shift)!', 90, 0.3); } return false; }
+  if (!(P.ball && Math.abs(P.vx) >= 2.8)) { if (P.state === 'play' && G.t - (G.wallMsg || -999) > 150 && LV && LV.season === 2) { G.wallMsg = G.t; pop(P.x, P.y - 40, isTouch ? 'Use a ARRANCADA!' : 'Use a arrancada (↓ ou Shift)!', 90, 0.3); } return false; }
   const w = pwalls.find(q => q.alive && q.tx === tx && ty >= q.ty0 && ty < q.ty1); if (!w) return false;
   w.alive = false; for (let y = w.ty0; y < w.ty1; y++) { setT(tx, y, '.'); burst(tx * T + 8, y * T + 8, 0xf4f0e6); }
   G.score += 50; pop(tx * T + 8, w.ty0 * T, '50'); sfx('crash'); buzz(30); return true;
@@ -1108,7 +1186,7 @@ function updatePlayer(){
   if (P.state === 'dead') { P.vy += 0.22; P.y += P.vy; if (++P.deathT > 110) afterDeath(); return; }
   if (P.state === 'goal') { P.vx *= 0.94; moveX(); P.vy = Math.min(7, P.vy + 0.24); moveY(); P.ph += Math.abs(P.vx) * 0.12; return; }
   for (const m of plats) if (P.onPlat === m) { P.x += m.dx; P.y += m.dy || 0; }
-  if (P.onGround) for (const bt of belts) if (Math.abs(P.y - bt.y) < 1 && P.x > bt.x0 && P.x < bt.x1) P.x += bt.dir * 1.3;
+  if (P.onGround && !(G.freeze > 0)) for (const bt of belts) if (Math.abs(P.y - bt.y) < 1 && P.x > bt.x0 && P.x < bt.x1) P.x += bt.dir * 1.3;
   for (const vt of vents) if (P.x > vt.x0 && P.x < vt.x1 && P.y > vt.y - 140) P.x += vt.dir * (P.onGround ? 0.8 : 0.5);
   const ICE = LV && LV.theme === 'ice' && P.onGround;
   const top = P.shoes > 0 ? 4.0 : 3.0, slow = Math.abs(P.vx) < 1.8, acc = slow ? (ICE ? 0.16 : 0.3) : (P.shoes > 0 ? 0.1 : 0.07), dec = ICE ? 0.2 : 0.6, frc = ICE ? 0.045 : 0.3, air = 0.13;
@@ -1118,7 +1196,7 @@ function updatePlayer(){
   else {
     if (S2 && inp.d && P.onGround && !P.charging) {
       if (Math.abs(P.vx) < 1.6) { P.charging = true; P.charge = 0; sfx('charge'); }
-      else if (!P.ball) { P.ball = true; P.dashT = 24; }
+      else { P.ball = true; P.dashT = Math.max(P.dashT, 20); }
     }
     if (P.charging) {
       if (!P.onGround || jumpPress) P.charging = false;
@@ -1210,12 +1288,22 @@ function interact(prevY){
     g.got = true; G.score += 1000; sfx('selo'); buzz(40); pop(g.x, g.y - 14, 'Selo dourado!', 110, 0.3); for (let i = 0; i < 3; i++) spark(g.x, g.y);
     const gi = golds.indexOf(g); G.goldRun = G.goldRun || {}; G.goldRun[gi] = 1; const k = 'motoca-gold-' + G.act; try { localStorage.setItem(k, String(loadNum(k) | (1 << gi))); } catch(e) {}
   }
+  for (const ck of clocks) if (ck.cd <= 0 && Math.abs(ck.x - P.x) < 14 && P.y > ck.y - 40 && P.y - P.h < ck.y) {
+    const bossOn = boss && G.lock && boss.state !== 'dead'; G.freeze = bossOn ? (boss.hp <= (boss.maxHp || 8) / 2 ? 120 : 160) : 300; ck.cd = bossOn ? 300 : 420;
+    sfx('check'); buzz(30); pop(ck.x, ck.y - 60, bossOn ? 'Ponto batido! A máquina parou!' : 'Ponto batido! Máquinas paradas!', 100, 0.3);
+  }
   for (const sh of shots) if (sh.alive && Math.abs(sh.x - P.x) < 11 && sh.y > P.y - P.h - 4 && sh.y < P.y + 2) {
     if (P.ball) { sh.alive = false; burst(sh.x, sh.y, 0xd7263d); sfx('pop'); G.score += 20; } else { sh.alive = false; hurt(sh.x); }
   }
   for (const d of drops) if (d.state === 'fall' && Math.abs(d.x - P.x) < 15 && P.y > d.y - d.h * T && P.y - P.h < d.y) hurt(d.x);
   for (const e of enemies) {
     if (!e.alive) continue;
+    if (e.type === 'engrenagem') {
+      const eb = { x0: e.x - 9, x1: e.x + 9, y0: e.y - 18, y1: e.y }; if (!overlap(pb, eb)) continue;
+      if (P.ball && P.dashT > 0) { e.alive = false; sfx('pop'); G.score += 200; pop(e.x, e.y - 24, '200'); burst(e.x, e.y - 8, 0x9aa4b0); }
+      else { if (P.vy > 0 && P.y < e.y - 6) { P.vy = -4.6; P.onGround = false; } if (G.t - (e.msg || -999) > 120 && P.inv === 0) { e.msg = G.t; pop(e.x, e.y - 30, 'Dentes! Só a arrancada derruba.', 90, 0.3); } hurt(e.x); }
+      continue;
+    }
     if (e.type === 'escrevente') {
       const eb = { x0: e.x - 9, x1: e.x + 9, y0: e.y - 20, y1: e.y }; if (!overlap(pb, eb)) continue;
       const facing = e.vx >= 0 ? 1 : -1, front = (P.x - e.x) * facing > 3, hit = P.ball || (P.vy > 0 && prevY <= eb.y0 + 6);
@@ -1263,12 +1351,22 @@ function giveItem(item, x, y){
 }
 function updateWorld(){
   for (const pd of pads) if (pd.cd > 0) pd.cd--;
+  const FZ = G.freeze > 0;
+  if (FZ) { G.freeze--; if (G.freeze % 60 === 0 && G.freeze > 0) beep(G.freeze <= 60 ? 1400 : 900, 0.05, 'square', 0.04); if (G.freeze === 0) beep(500, 0.2, 'sawtooth', 0.05, 900); }
+  for (const ck of clocks) if (ck.cd > 0) ck.cd--;
+  if (LV && LV.chase && G.state === 'play' && P.state === 'play') {
+    const c = LV.chase;
+    if (!FZ) { c.cur = Math.min(c.max, c.cur + c.acc); c.x += c.cur; }
+    if (P.x - c.x > 520) c.x = P.x - 520;
+    if (P.x - 7 < c.x) die();
+    if (G.t % 40 === 0 && P.x - c.x < 260) beep(70, 0.18, 'sawtooth', 0.05);
+  }
   for (const cb of cubes) {
     cb.t++;
     if (cb.state === 'crack' && cb.t > 32) { cb.state = 'gone'; cb.t = 0; setT(cb.tx, cb.ty, '.'); burst(cb.tx * T + 8, cb.ty * T + 8, 0xbfe8ff); sfx('crash'); }
     else if (cb.state === 'gone' && cb.t > 200) { const px = cb.tx * T + 8, py = cb.ty * T + 8; if (Math.abs(px - P.x) > 20 || Math.abs(py - (P.y - 11)) > 24) { cb.state = 'solid'; cb.t = 0; setT(cb.tx, cb.ty, 'C'); } }
   }
-  for (const cr of crushers) {
+  if (!FZ) for (const cr of crushers) {
     cr.t++;
     switch (cr.state) {
       case 'up': if (cr.t > HARD.crUp) { cr.state = 'warn'; cr.t = 0; } break;
@@ -1278,7 +1376,7 @@ function updateWorld(){
       case 'rise': cr.y -= 2; if (cr.y <= cr.rest) { cr.y = cr.rest; cr.state = 'up'; cr.t = 0; } break;
     }
   }
-  for (const sp of spawners) {
+  if (!FZ) for (const sp of spawners) {
     if (Math.abs(sp.x - P.x) > 380) continue;
     if (++sp.t >= HARD.spawn) { sp.t = 0; rollers.push({ x: sp.x + sp.dir * 14, y: sp.y - 8, vx: sp.dir * 2.2, vy: 0, life: 600, rot: 0, alive: true }); }
   }
@@ -1292,10 +1390,11 @@ function updateWorld(){
   if (rollers.length > 20) rollers = rollers.filter(r => r.alive);
   for (const vt of vents) if (G.t % 3 === 0 && Math.abs((vt.x0 + vt.x1) / 2 - P.x) < 360) addPart(vt.dir > 0 ? vt.x0 : vt.x1, vt.y - 20 - Math.random() * 90, vt.dir * (2 + Math.random()), 0, 0, Math.round((vt.x1 - vt.x0) / 2.6), 0xffffff, 0.7);
   updateBoss();
-  for (const m of plats) { m.t += m.sp; if (m.axis === 'y') { const ny = m.y0 + Math.sin(m.t) * m.range; m.dy = ny - m.y; m.y = ny; m.dx = 0; } else { const nx = m.x0 + Math.sin(m.t) * m.range; m.dx = nx - m.x; m.x = nx; m.dy = 0; } }
+  for (const m of plats) { if (FZ) { m.dx = 0; m.dy = 0; continue; } m.t += m.sp; if (m.axis === 'c') { const a = m.t + m.ph, nx = m.cx + Math.cos(a) * m.range - 24, ny = m.cy + Math.sin(a) * m.range; m.dx = nx - m.x; m.dy = ny - m.y; m.x = nx; m.y = ny; continue; } if (m.axis === 'y') { const ny = m.y0 + Math.sin(m.t) * m.range; m.dy = ny - m.y; m.y = ny; m.dx = 0; } else { const nx = m.x0 + Math.sin(m.t) * m.range; m.dx = nx - m.x; m.x = nx; m.dy = 0; } }
   for (const e of enemies) {
     if (!e.alive) continue; e.t++;
     if (Math.abs(e.x - P.x) > 380) continue;
+    if (e.type === 'engrenagem' && FZ) continue;
     if (e.type === 'carimbador') {
       const dir = P.x < e.x ? -1 : 1; e.vx = dir * 0.001; e.cd = (e.cd == null ? 40 : e.cd) - 1;
       if (e.cd <= 0 && Math.abs(P.x - e.x) < 230 && Math.abs(P.y - e.y) < 40 && P.state === 'play') { e.cd = HARD.shot || 110; e.fire = 12; shots.push({ x: e.x + dir * 12, y: e.y - 9, vx: dir * 2.4, alive: true, life: 200 }); sfx('shot'); }
@@ -1345,7 +1444,7 @@ function bossLockCheck(){
   if (!boss || G.lock || P.state !== 'play') return;
   if (P.x > (boss.a0 + 3) * T) {
     G.lock = true; for (let y = 0; y < 13; y++) grid[y][boss.a0 - 1] = 'B'; playSong('chefe');
-    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : boss.kind === 'freezer' ? 'Pule em cima quando ele abrir a tampa!' : boss.kind === 'truck' ? 'Pule o caminhão! Quando ele bater, pule em cima!' : boss.kind === 'balloon' ? 'Quando o balão descer, pule no cesto!' : boss.kind === 'monster' ? 'Quando o monstro se abaixar, pule na cabeça!' : boss.kind === 'tabeliao' ? 'Quando o carimbo prender no chão, pule na cabeça dele ou use a arrancada!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
+    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : boss.kind === 'freezer' ? 'Pule em cima quando ele abrir a tampa!' : boss.kind === 'truck' ? 'Pule o caminhão! Quando ele bater, pule em cima!' : boss.kind === 'balloon' ? 'Quando o balão descer, pule no cesto!' : boss.kind === 'monster' ? 'Quando o monstro se abaixar, pule na cabeça!' : boss.kind === 'tabeliao' ? 'Quando o carimbo prender no chão, pule na cabeça dele ou use a arrancada!' : boss.kind === 'maquina' ? 'Bata o ponto no relógio: a máquina para e aí dá para pular em cima dela!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
   }
 }
 function throwCrates(){
@@ -1558,6 +1657,27 @@ function updateTabeliao(b){
   }
   if (b.waves.length > 10) b.waves = b.waves.filter(w => w.alive);
 }
+function updateMaquina(b){
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 4) * T + 8, hard = b.hp <= (b.maxHp || 8) / 2, G0 = 13 * T;
+  if (b.state === 'enter') { b.vy += 0.35; b.y += b.vy; if (b.y >= G0) { b.y = G0; b.vy = 0; b.state = 'work'; b.t = 0; sfx('crash'); dust(b.x - 30, b.y); dust(b.x + 30, b.y); } return; }
+  if (G.freeze > 0) { if (b.state !== 'frozen') { b.state = 'frozen'; b.t = 0; } if (b.t % 6 === 0) addPart(b.x + (Math.random() - 0.5) * 30, b.y - 60, 0, -1.2, -0.01, 30, 0xffffff, 1.4); return; }
+  if (b.state === 'frozen') { b.state = 'work'; b.t = 0; }
+  switch (b.state) {
+    case 'work':
+      b.dir = P.x < b.x ? -1 : 1;
+      if (b.t % (hard ? 38 : 52) === 20) { b.crates.push({ kind: 'gearRoll', x: b.x + b.dir * 34, y: G0 - 9, vx: b.dir * (hard ? 2.7 : 2.1), vy: 0, rot: 0, alive: true }); sfx('throw'); b.print = 10; }
+      if (b.t % (hard ? 60 : 84) === 40) for (let i = 0; i < (hard ? 2 : 1); i++) b.crates.push({ kind: 'ticket', g: 0.05, max: 2.0, x: P.x + (i ? 50 : 0) + (Math.random() - 0.5) * 40, y: G0 - 170, vx: 0, vy: 0.4, rot: Math.random() * 6, alive: true });
+      if (b.print > 0) b.print--;
+      if (b.t > (hard ? 200 : 260)) { b.state = 'charge'; b.t = 0; b.target = P.x < (L + R) / 2 ? L : R; sfx('alarm'); }
+      break;
+    case 'charge': {
+      if (b.t < 30) { b.x += Math.sin(b.t * 1.2) * 1.2; break; }
+      const d = Math.sign(b.target - b.x), sp = hard ? 3.6 : 2.8; b.dir = d || b.dir; b.x += d * sp;
+      if (G.t % 3 === 0) dust(b.x - d * 30, G0);
+      if (Math.abs(b.target - b.x) <= sp) { b.x = b.target; b.state = 'work'; b.t = 0; sfx('crash'); }
+      break; }
+  }
+}
 function updateBoss(){
   const b = boss; if (!b) return;
   b.t++; if (b.inv > 0) b.inv--;
@@ -1568,6 +1688,7 @@ function updateBoss(){
   else if (b.kind === 'balloon' && b.state !== 'dead') updateBalloon(b);
   else if (b.kind === 'monster' && b.state !== 'dead') updateMonster(b);
   else if (b.kind === 'tabeliao' && b.state !== 'dead') updateTabeliao(b);
+  else if (b.kind === 'maquina' && b.state !== 'dead') updateMaquina(b);
   else switch (b.state) {
     case 'enter':
       b.vy += 0.35; b.y += b.vy;
@@ -1593,11 +1714,18 @@ function updateBoss(){
       if (b.t < 120 && b.t % 5 === 0) burst(b.x + (Math.random() - 0.5) * 44, b.y - 10 - Math.random() * 30, Math.random() < 0.5 ? 0x777777 : 0xffb84a);
       if (b.t < 120 && b.t % 15 === 0) sfx('pop');
       if (b.t > 50) { b.zeX += 2.4; b.zeY = Math.abs(Math.sin(b.t * 0.22)) * 10 + (b.t < 70 ? (b.t - 50) * 1.2 : 0); }
-      if (b.t === 120) { pop(b.x, b.y - 70, b.kind === 'panel' ? 'Senha chamada: a sua!' : b.kind === 'freezer' ? 'Processo descongelado!' : b.kind === 'truck' ? 'Mercadoria liberada!' : b.kind === 'balloon' ? 'Imposto devolvido!' : b.kind === 'monster' ? 'Burocracia vencida!' : b.kind === 'tabeliao' ? 'Firma reconhecida!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
+      if (b.t === 120) { pop(b.x, b.y - 70, b.kind === 'panel' ? 'Senha chamada: a sua!' : b.kind === 'freezer' ? 'Processo descongelado!' : b.kind === 'truck' ? 'Mercadoria liberada!' : b.kind === 'balloon' ? 'Imposto devolvido!' : b.kind === 'monster' ? 'Burocracia vencida!' : b.kind === 'tabeliao' ? 'Firma reconhecida!' : b.kind === 'maquina' ? 'Funcionário registrado!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
       break;
   }
   for (const c of b.crates) {
     if (!c.alive) continue;
+    if (c.kind === 'gearRoll') {
+      if (!(G.freeze > 0)) { c.x += c.vx; c.rot -= c.vx * 0.09; }
+      if (c.x < b.a0 * T || c.x > b.a1 * T || b.state === 'dead') { c.alive = false; burst(c.x, c.y, 0x9aa4b0); continue; }
+      if (P.state === 'play' && Math.abs(c.x - P.x) < 13 && P.y > c.y - 10) { if (P.ball && P.dashT > 0) { c.alive = false; burst(c.x, c.y, 0x9aa4b0); sfx('pop'); G.score += 20; } else hurt(c.x); }
+      continue;
+    }
+    if (G.freeze > 0 && b.kind === 'maquina') continue;
     const tk = c.kind === 'ticket' || c.kind === 'boleto';
     c.vy += c.g || 0.2; if (c.max) c.vy = Math.min(c.vy, c.max);
     c.x += c.vx + (tk ? Math.sin(b.t * 0.1 + c.rot) * 0.6 : 0); c.y += c.vy; c.rot += tk ? 0.05 : 0.12 * Math.sign(c.vx || 1);
@@ -1613,10 +1741,11 @@ function bossInteract(pb, prevY){
   bossLockCheck();
   const b = boss;
   if (!b || b.state === 'idle' || b.state === 'enter' || b.state === 'dead' || P.state !== 'play') return;
-  const pan = b.kind === 'panel', frz = b.kind === 'freezer', trk = b.kind === 'truck', bal = b.kind === 'balloon', mon = b.kind === 'monster', tab = b.kind === 'tabeliao';
-  const bb = tab ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - (b.state === 'stuck' ? 46 : 70), y1: b.y } : mon ? { x0: b.x - 34, x1: b.x + 34, y0: b.y - (60 - 26 * b.crouch), y1: b.y } : bal ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - 30, y1: b.y } : trk ? { x0: b.x - 32, x1: b.x + 32, y0: b.y - 40, y1: b.y } : pan ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 46, y1: b.y } : frz ? { x0: b.x - 26, x1: b.x + 26, y0: b.y - 42, y1: b.y } : { x0: b.x - 22, x1: b.x + 22, y0: b.y - 36, y1: b.y };
+  const pan = b.kind === 'panel', frz = b.kind === 'freezer', trk = b.kind === 'truck', bal = b.kind === 'balloon', mon = b.kind === 'monster', tab = b.kind === 'tabeliao', mq = b.kind === 'maquina';
+  const bb = mq ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 58, y1: b.y } : tab ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - (b.state === 'stuck' ? 46 : 70), y1: b.y } : mon ? { x0: b.x - 34, x1: b.x + 34, y0: b.y - (60 - 26 * b.crouch), y1: b.y } : bal ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - 30, y1: b.y } : trk ? { x0: b.x - 32, x1: b.x + 32, y0: b.y - 40, y1: b.y } : pan ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 46, y1: b.y } : frz ? { x0: b.x - 26, x1: b.x + 26, y0: b.y - 42, y1: b.y } : { x0: b.x - 22, x1: b.x + 22, y0: b.y - 36, y1: b.y };
   if (!overlap(pb, bb)) return;
   const stomp = P.vy > 0 && prevY <= bb.y0 + 8;
+  if (mq && b.state !== 'frozen') { if (stomp || P.ball) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.8; P.onGround = false; P.dashT = 0; beep(900, 0.06, 'square', 0.06); if (G.t - (b.msg || -999) > 100) { b.msg = G.t; pop(b.x, b.y - 80, 'Está ligada! Bata o ponto primeiro.', 90, 0.2); } } else hurt(b.x); return; }
   if (tab && b.state !== 'stuck') { if (stomp || P.ball) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.8; P.onGround = false; P.dashT = 0; beep(900, 0.06, 'square', 0.06); if (G.t - (b.msg || -999) > 100) { b.msg = G.t; pop(b.x, b.y - 80, 'O carimbo protege! Espere prender no chão.', 90, 0.2); } } else hurt(b.x); return; }
   if (pan && b.state === 'stuck' && !P.ball && !stomp) { P.x = P.x < b.x ? bb.x0 - P.w / 2 - 0.5 : bb.x1 + P.w / 2 + 0.5; P.vx = 0; return; }
   if (mon && b.state === 'crouch' && !P.ball && !stomp) { P.x = P.x < b.x ? bb.x0 - P.w / 2 - 0.5 : bb.x1 + P.w / 2 + 0.5; P.vx = 0; return; }
@@ -1628,7 +1757,7 @@ function bossInteract(pb, prevY){
   if (frz && b.state !== 'open' && (P.ball || stomp)) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.4; P.onGround = false; beep(900, 0.06, 'square', 0.06); return; }
   if ((P.ball || stomp) && (!pan || b.state === 'stuck')) {
     if (b.inv === 0) {
-      b.hp--; b.inv = 50; G.score += 100; sfx('bosshit'); buzz(35); burst(P.x, bb.y0, 0xffffff);
+      b.hp--; b.inv = 50; G.score += 100; sfx('bosshit'); buzz(35); burst(P.x, bb.y0, 0xffffff); if (mq) G.freeze = Math.min(G.freeze, 45);
       if (mon && b.hp > 0 && b.hp % 4 === 0) { b.phase++; b.state = 'roar'; b.t = 0; b.inv = 70; pop(b.x, b.y - 90, `Etapa ${b.phase} de 3!`, 120, 0.2); }
       if (b.hp <= 0) {
         b.state = 'dead'; b.t = 0; G.score += 1000; pop(b.x, b.y - 50, '1000'); sfx('win');
@@ -1682,7 +1811,8 @@ const SKIES = {
   ice: { tex: skyTex([[0, '#7aa8c8'], [1, '#d8eef8']]), fog: 0xcfe6f2, sun: 0xe8f6ff, si: 0.6, hemi: 0xe0f2ff, hi: 0.9 },
   night: { tex: skyTex([[0, '#0c0824'], [0.6, '#2a1a4a'], [1, '#6a2a5a']]), fog: 0x2a1f44, sun: 0xb8c8ff, si: 0.6, hemi: 0xa89ae0, hi: 0.75 },
   palace: { tex: skyTex([[0, '#5a2030'], [1, '#c8a070']]), fog: 0xe8d4b0, sun: 0xfff0d0, si: 0.62, hemi: 0xfff0dc, hi: 0.85 },
-  cartorio: { tex: skyTex([[0, '#4a3020'], [1, '#c8a878']]), fog: 0xd8c4a0, sun: 0xfff2dc, si: 0.66, hemi: 0xfff0d8, hi: 0.86 }
+  cartorio: { tex: skyTex([[0, '#4a3020'], [1, '#c8a878']]), fog: 0xd8c4a0, sun: 0xfff2dc, si: 0.66, hemi: 0xfff0d8, hi: 0.86 },
+  fabrica: { tex: skyTex([[0, '#2a2e38'], [1, '#9aa0a8']]), fog: 0xa8acb4, sun: 0xfff4e0, si: 0.7, hemi: 0xe8eef8, hi: 0.8 }
 };
 function applySky(k){ const S = SKIES[k] || SKIES.day; scene.background = S.tex; scene.fog.color.setHex(S.fog); sun.color.setHex(S.sun); sun.intensity = S.si; hemi.color.setHex(S.hemi); hemi.intensity = S.hi; }
 
@@ -1761,7 +1891,7 @@ function makeTextures(){
     palWall((c) => { plaque(c, 'Departamento de Departamentos', 60, 15); c.fillStyle = '#8a5a32'; c.fillRect(88, 84, 80, 78); c.fillStyle = '#6a4222'; c.fillRect(96, 92, 28, 66); c.fillRect(132, 92, 28, 66); c.fillStyle = '#ffd56a'; c.fillRect(126, 120, 4, 10); }),
     palWall((c) => { plaque(c, 'Protocolo Geral', 40, 18); c.fillStyle = '#5a3a22'; c.fillRect(56, 70, 144, 90); for (let k = 0; k < 4; k++) for (let i = 0; i < 6; i++) { c.fillStyle = '#fffaf0'; c.fillRect(64 + i * 22, 78 + k * 20, 16, 14); c.fillStyle = '#d7263d'; c.fillRect(64 + i * 22, 84 + k * 20, 16, 2); } })
   ];
-  TX.docs = { 1: TX.doc, 2: docTex('ALVARÁ'), 3: docTex('AVCB'), 4: docTex('LICENÇA'), 5: docTex('IE'), 6: docTex('CND'), 7: docTex('CONTRATO') };
+  TX.docs = { 1: TX.doc, 2: docTex('ALVARÁ'), 3: docTex('AVCB'), 4: docTex('LICENÇA'), 5: docTex('IE'), 6: docTex('CND'), 7: docTex('CONTRATO'), 8: docTex('REGISTRO') };
   TX.cartFloor = ctex(64, 64, (c) => { c.fillStyle = '#9a6a3a'; c.fillRect(0, 0, 64, 64); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { c.fillStyle = (i + j) % 2 ? '#a8784a' : '#8a5a2e'; if ((i + j) % 2) c.fillRect(i * 16 + 1, j * 16 + 1, 14, 6), c.fillRect(i * 16 + 1, j * 16 + 9, 14, 6); else c.fillRect(i * 16 + 1, j * 16 + 1, 6, 14), c.fillRect(i * 16 + 9, j * 16 + 1, 6, 14); } }, true);
   TX.cartEdge = ctex(64, 16, (c) => { c.fillStyle = '#5a3418'; c.fillRect(0, 0, 64, 16); c.fillStyle = '#8a5a2e'; c.fillRect(0, 0, 64, 4); c.fillStyle = '#c8962a'; c.fillRect(0, 12, 64, 2); }, true);
   TX.cartBase = ctex(64, 64, (c) => { c.fillStyle = '#6a3e1e'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#5a3418'; c.fillRect(4, 6, 24, 52); c.fillRect(36, 6, 24, 52); c.fillStyle = '#7e4c26'; c.fillRect(6, 8, 20, 48); c.fillRect(38, 8, 20, 48); }, true);
@@ -1773,6 +1903,32 @@ function makeTextures(){
   TX.paperWall = ctex(64, 64, (c) => { c.fillStyle = '#f4f0e6'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#c8c2b4'; for (let y = 3; y < 64; y += 5) c.fillRect(0, y, 64, 1);
     c.fillStyle = '#d7263d'; c.fillRect(0, 24, 64, 14); c.fillStyle = '#ffd23f'; c.beginPath(); c.moveTo(36, 25); c.lineTo(24, 32); c.lineTo(31, 32); c.lineTo(27, 37); c.lineTo(40, 30); c.lineTo(33, 30); c.closePath(); c.fill();
     c.strokeStyle = '#a89e8a'; c.lineWidth = 2; c.strokeRect(1, 1, 62, 62); });
+  TX.fabFloor = ctex(64, 64, (c) => { c.fillStyle = '#8a9098'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#a8aeb6'; for (let y = 4; y < 64; y += 16) for (let x = (y / 16 | 0) % 2 ? 12 : 4; x < 64; x += 16) { c.save(); c.translate(x, y); c.rotate(0.6); c.fillRect(-5, -1.5, 10, 3); c.restore(); } c.fillStyle = '#6a7078'; c.fillRect(0, 62, 64, 2); c.fillRect(62, 0, 2, 64); }, true);
+  TX.fabEdge = ctex(64, 16, (c) => { c.fillStyle = '#1a1a1e'; c.fillRect(0, 0, 64, 16); c.fillStyle = '#f2c230'; for (let x = -16; x < 64; x += 16) { c.beginPath(); c.moveTo(x, 16); c.lineTo(x + 8, 16); c.lineTo(x + 16, 0); c.lineTo(x + 8, 0); c.fill(); } }, true);
+  TX.fabBase = ctex(64, 64, (c) => { c.fillStyle = '#4a4e56'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#3a3e46'; for (let y = 0; y < 64; y += 16) { c.fillRect(0, y, 64, 2); const o = (y / 16) % 2 ? 16 : 0; for (let x = o; x < 80; x += 32) c.fillRect(x, y, 2, 16); } }, true);
+  TX.fabBox = ctex(64, 64, (c) => { c.fillStyle = '#5a7a6a'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#4a6a5a'; c.fillRect(4, 4, 56, 56); c.strokeStyle = '#3a4a42'; c.lineWidth = 3; c.strokeRect(2, 2, 60, 60); c.beginPath(); c.moveTo(4, 4); c.lineTo(60, 60); c.moveTo(60, 4); c.lineTo(4, 60); c.stroke();
+    c.fillStyle = '#e8e2d0'; c.fillRect(14, 24, 36, 16); c.fillStyle = '#2a2a30'; c.font = '800 11px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('FOLHA', 32, 33); });
+  TX.fabShelf = ctex(32, 8, (c) => { c.fillStyle = '#5a6068'; c.fillRect(0, 0, 32, 8); c.fillStyle = '#2a2e34'; for (let x = 1; x < 32; x += 4) c.fillRect(x, 2, 2, 5); c.fillStyle = '#f2c230'; c.fillRect(0, 0, 32, 2); }, true);
+  TX.fabHigh = ctex(64, 64, (c) => { c.fillStyle = '#6a3a2e'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#5a2e24'; for (let y = 0; y < 64; y += 8) { c.fillRect(0, y, 64, 1); const o = (y / 8) % 2 ? 8 : 0; for (let x = o; x < 72; x += 16) c.fillRect(x, y, 1, 8); }
+    c.fillStyle = '#2a3440'; c.fillRect(8, 8, 48, 40); c.fillStyle = '#8ab0c8'; for (let i = 0; i < 3; i++) for (let j = 0; j < 2; j++) c.fillRect(11 + i * 15, 11 + j * 18, 12, 15); }, true);
+  TX.clockFace = ctex(64, 64, (c) => { c.fillStyle = '#f4f0e6'; c.beginPath(); c.arc(32, 32, 30, 0, Math.PI * 2); c.fill(); c.strokeStyle = '#1a0b12'; c.lineWidth = 4; c.stroke(); c.fillStyle = '#1a0b12'; for (let i = 0; i < 12; i++) { const a = i * Math.PI / 6; c.fillRect(32 + Math.cos(a) * 23 - 2, 32 + Math.sin(a) * 23 - 2, 4, 4); } c.font = '800 10px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText('PONTO', 32, 48); });
+  TX.prazo = ctex(128, 256, (c, w, h) => { c.fillStyle = '#f4f0e6'; c.fillRect(0, 0, w, h); c.fillStyle = '#c8c2b4'; for (let y = 4; y < h; y += 6) c.fillRect(0, y, w, 1); c.fillStyle = '#d7263d'; c.fillRect(0, 96, w, 60); c.fillStyle = '#fff'; c.font = '800 34px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('PRAZO', w / 2, 126); });
+  TX.fabSign = ctex(512, 96, (c, w, h) => { c.fillStyle = '#2a2e34'; c.fillRect(0, 0, w, h); c.strokeStyle = '#f2c230'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.fillStyle = '#f2c230'; c.font = '800 40px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Máquina da Folha', w / 2, h / 2 + 2); });
+  TX.maqScreen = ctex(128, 64, (c, w, h) => { c.fillStyle = '#0a1a10'; c.fillRect(0, 0, w, h); c.fillStyle = '#3fdf6a'; c.font = '800 18px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('FOLHA', w / 2, 20); c.font = '700 13px "Baloo 2", sans-serif'; c.fillText('processando...', w / 2, 44); });
+  const fabWall = (draw) => ctex(256, 224, (c, w, h) => { c.fillStyle = '#6a3a2e'; c.fillRect(0, 0, w, h); c.fillStyle = '#5a2e24'; for (let y = 0; y < 150; y += 12) { c.fillRect(0, y, w, 2); const o = (y / 12) % 2 ? 16 : 0; for (let x = o; x < w + 16; x += 32) c.fillRect(x, y, 2, 12); }
+    c.fillStyle = '#4a4e56'; c.fillRect(0, 150, w, 74); c.fillStyle = '#f2c230'; for (let x = -24; x < w; x += 24) { c.beginPath(); c.moveTo(x, 150); c.lineTo(x + 12, 150); c.lineTo(x + 24, 140); c.lineTo(x + 12, 140); c.fill(); } draw(c, w, h); });
+  const poster = (c, title, lines, col) => { c.fillStyle = '#f4ecd8'; c.fillRect(56, 16, 144, 118); c.strokeStyle = '#2a2a30'; c.lineWidth = 4; c.strokeRect(56, 16, 144, 118); c.fillStyle = col; c.fillRect(56, 16, 144, 28);
+    c.fillStyle = '#fff'; c.font = '800 16px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(title, 128, 30); c.fillStyle = '#2a2a30'; c.font = '700 13px "Baloo 2", sans-serif'; lines.forEach((l, i) => c.fillText(l, 128, 60 + i * 19)); };
+  TX.fabWall = [
+    fabWall((c) => poster(c, 'FOLHA DE PAGAMENTO', ['Salário', 'FGTS 8%', '13º salário', 'Férias + 1/3'], '#2e6b9e')),
+    fabWall((c) => { c.fillStyle = '#f4f0e6'; c.beginPath(); c.arc(128, 66, 44, 0, Math.PI * 2); c.fill(); c.strokeStyle = '#2a2a30'; c.lineWidth = 6; c.stroke(); c.lineWidth = 5; c.beginPath(); c.moveTo(128, 66); c.lineTo(128, 34); c.moveTo(128, 66); c.lineTo(150, 78); c.stroke();
+      c.fillStyle = '#f2c230'; c.font = '800 18px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText('BATA O PONTO!', 128, 132); }),
+    fabWall((c) => { c.fillStyle = '#5a6068'; c.fillRect(40, 30, 176, 104); for (let i = 0; i < 3; i++) { c.fillStyle = '#f4f0e6'; c.beginPath(); c.arc(80 + i * 48, 70, 18, 0, Math.PI * 2); c.fill(); c.strokeStyle = '#d7263d'; c.lineWidth = 3; c.beginPath(); c.moveTo(80 + i * 48, 70); c.lineTo(80 + i * 48 + 10, 60 + i * 6); c.stroke(); }
+      c.fillStyle = '#3fdf6a'; c.fillRect(60, 104, 14, 14); c.fillStyle = '#d7263d'; c.fillRect(84, 104, 14, 14); }),
+    fabWall((c) => poster(c, 'CONTRATA-SE', ['1 vaga', 'Carteira assinada', 'Registro no', 'primeiro dia'], '#d7263d')),
+    fabWall((c) => { c.fillStyle = '#3a3e46'; for (let k = 0; k < 4; k++) c.fillRect(20, 30 + k * 26, 216, 8); c.fillStyle = '#c8962a'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(60 + k * 70, 90, 22, 0, Math.PI * 2); c.fill(); } c.fillStyle = '#4a4e56'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(60 + k * 70, 90, 8, 0, Math.PI * 2); c.fill(); } }),
+    fabWall((c) => poster(c, 'HORA EXTRA?', ['Vale 50% a mais', 'que a hora normal', '(no mínimo)', ''], '#3a7a4a'))
+  ];
   TX.goldSeal = ctex(64, 64, (c) => { const g = c.createRadialGradient(26, 24, 4, 32, 32, 30); g.addColorStop(0, '#fff6b0'); g.addColorStop(0.6, '#f2b632'); g.addColorStop(1, '#b8780c'); c.fillStyle = g; c.beginPath(); c.arc(32, 32, 30, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#8a5a0c'; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 8 : 18; c.lineTo(32 + Math.cos(a) * r, 33 + Math.sin(a) * r); } c.closePath(); c.fill(); });
   TX.tabSign = ctex(512, 96, (c, w, h) => { c.fillStyle = '#3a2210'; c.fillRect(0, 0, w, h); c.strokeStyle = '#d8b04a'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16);
@@ -1915,6 +2071,7 @@ function buildStatic(){
   MAT.crate = toon(0xffffff, { map: LV && LV.theme === 'market' ? TX.fruitCrate : pick(TX.offBox, TX.iceBlock, TX.crate) });
   if (LV && LV.theme === 'palace') { MAT.side = toon(0xffffff, { map: TX.palFloor }); MAT.curb = toon(0xffffff, { map: TX.palEdge }); MAT.brick = toon(0xffffff, { map: TX.palBase }); MAT.crate = toon(0xffffff, { map: TX.palBlock }); MAT.awn = toon(0xffffff, { map: TX.palRail }); }
   if (LV && LV.theme === 'roofs') { MAT.side = toon(0xffffff, { map: TX.roofTop }); MAT.curb = toon(0xffffff, { map: TX.roofEdge }); MAT.brick = new THREE.MeshLambertMaterial({ map: TX.roofBase, emissive: 0x3a2a20, emissiveIntensity: 0.25 }); MAT.crate = toon(0xffffff, { map: TX.roofBlock }); } MAT.awn = toon(0xffffff, { map: pick(TX.offShelf, TX.iceShelf, TX.awning) });
+  if (LV && LV.theme === 'fabrica') { MAT.side = toon(0xffffff, { map: TX.fabFloor }); MAT.curb = toon(0xffffff, { map: TX.fabEdge }); MAT.brick = toon(0xffffff, { map: TX.fabBase }); MAT.crate = toon(0xffffff, { map: TX.fabBox }); MAT.awn = toon(0xffffff, { map: TX.fabShelf }); }
   if (LV && LV.theme === 'cartorio') { MAT.side = toon(0xffffff, { map: TX.cartFloor }); MAT.curb = toon(0xffffff, { map: TX.cartEdge }); MAT.brick = toon(0xffffff, { map: TX.cartBase }); MAT.crate = toon(0xffffff, { map: TX.cartBox }); MAT.awn = toon(0xffffff, { map: TX.cartShelf }); }
   const D = 4;
   // chão em trechos
@@ -1969,6 +2126,7 @@ function buildStatic(){
   if (LV && LV.theme === 'roofs') { buildRoofBack(); return; }
   if (LV && LV.theme === 'palace') { buildPalaceBack(); return; }
   if (LV && LV.theme === 'cartorio') { buildCartorioBack(); return; }
+  if (LV && LV.theme === 'fabrica') { buildFabricaBack(); return; }
   // prédios do fundo
   const R = rng(5), facades = [0xe08a64, 0xf0c66a, 0x84b2d6, 0xbccc76, 0xe4a0b2, 0xf2ead6, 0x96c8b0, 0xd8a070];
   const winMat = new THREE.MeshLambertMaterial({ map: TX.windows, transparent: true });
@@ -2040,6 +2198,23 @@ function buildOfficeBack(){
     else { mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), pot, x + 1, 0.25, -3.0, staticGroup); mesh(new THREE.IcosahedronGeometry(0.55, 0), leaf, x + 1, 0.95, -3.0, staticGroup); }
   }
   if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.bossSign }), 64, 7.6, wallZ + 0.05, staticGroup, false);
+}
+function buildFabricaBack(){
+  const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24, H = 22;
+  const lowMats = TX.fabWall.map(t => new THREE.MeshLambertMaterial({ map: t }));
+  for (let x = W0, i = 0; x < W1; x += segW, i++) { if (LV.bossSign && x > 52 && x < 76) continue; mesh(new THREE.PlaneGeometry(segW, 7), lowMats[(i * 5 + 2) % lowMats.length], x + segW / 2, 2.5, wallZ, staticGroup, false); }
+  const hg = new THREE.PlaneGeometry(W1 - W0, H); const uv = hg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (W1 - W0) / 4, uv.getY(i) * H / 4);
+  mesh(hg, new THREE.MeshLambertMaterial({ map: TX.fabHigh }), (W0 + W1) / 2, 6 + H / 2, wallZ - 0.02, staticGroup, false);
+  const pipe = toon(0x7a8088), red = toon(0xb83a2a), steel = toon(0x5a6068), glow = new THREE.MeshBasicMaterial({ color: 0xfff6d8 });
+  for (const [y, z, m] of [[7.2, wallZ + 0.4, pipe], [8.0, wallZ + 0.5, red], [11.5, wallZ + 0.4, pipe]]) { const pp = mesh(new THREE.CylinderGeometry(0.22, 0.22, W1 - W0, 10), m, (W0 + W1) / 2, y, z, staticGroup, false); pp.rotation.z = Math.PI / 2; }
+  for (let x = W0; x < W1; x += 6) { mesh(new THREE.BoxGeometry(0.25, 0.25, 6), steel, x, 13.5, -1, staticGroup, false); mesh(new THREE.CylinderGeometry(0.02, 0.02, 2.2, 6), steel, x + 3, 12.4, -1.5, staticGroup, false); mesh(new THREE.ConeGeometry(0.5, 0.4, 12, 1, true), steel, x + 3, 11.2, -1.5, staticGroup, false); mesh(new THREE.SphereGeometry(0.18, 8, 6), glow, x + 3, 11.05, -1.5, staticGroup, false); }
+  const fl = mesh(new THREE.PlaneGeometry(W1 - W0, 1.8), toon(0xffffff, { map: TX.fabFloor }), (W0 + W1) / 2, -0.02, -2.8, staticGroup, false); fl.rotation.x = -Math.PI / 2;
+  for (let x = 10, i = 0; x < COLS - 4; x += 13, i++) {
+    if (LV.bossSign && x > 50 && x < 76) continue;
+    if (i % 2 === 0) { for (let k = 0; k < 3; k++) mesh(new THREE.CylinderGeometry(0.4, 0.4, 1.1, 12), [toon(0x3f73b8), toon(0x2a5a9a), toon(0xd7263d)][k], x + k * 0.9, 0.55, -3.0, staticGroup); }
+    else { mesh(new THREE.BoxGeometry(2.2, 1.6, 1.0), toon(0x5a7a6a), x, 0.8, -3.1, staticGroup); mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), new THREE.MeshBasicMaterial({ color: i % 4 === 1 ? 0x3fdf6a : 0xd7263d }), x + 0.6, 1.1, -2.58, staticGroup, false); }
+  }
+  if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.fabSign }), 64, 7.6, wallZ + 0.05, staticGroup, false);
 }
 function buildCartorioBack(){
   const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24, H = 20 + TOPX;
@@ -2249,6 +2424,13 @@ function buildEnemy(e){
     mesh(new THREE.CylinderGeometry(0.09, 0.11, 0.36, 10), toon(0x6b3f15), 0, 0.5, 0, body);
     mesh(new THREE.SphereGeometry(0.17, 12, 10), toon(0x6b3f15), 0, 0.78, 0, body);
     eyes(0.29, 0.26, [-0.1, 0.1], 0.06);
+  } else if (e.type === 'engrenagem') {
+    const spin = new THREE.Group(); spin.position.set(0, 0.55, 0); body.add(spin); parts.spin = spin;
+    const metal = toon(0x9aa4b0), dark = toon(0x5a6068);
+    const disc = mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.3, 16), metal, 0, 0, 0, spin); disc.rotation.x = Math.PI / 2;
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, tth = mesh(new THREE.BoxGeometry(0.16, 0.18, 0.28), dark, Math.cos(a) * 0.5, Math.sin(a) * 0.5, 0, spin); tth.rotation.z = a; }
+    const hub = mesh(new THREE.CylinderGeometry(0.14, 0.14, 0.34, 10), dark, 0, 0, 0, spin); hub.rotation.x = Math.PI / 2;
+    eyes(0.12, 0.62, [0.17], 0.07); eyes(-0.06, 0.62, [0.17], 0.07);
   } else if (e.type === 'carimbador') {
     // balcão com carimbo que atira
     mesh(new THREE.BoxGeometry(0.8, 0.55, 0.6), toon(0x6a3e1e), 0, 0.28, 0, body);
@@ -2443,6 +2625,23 @@ function buildBoss(){
   const ze = makeCarimbo(body);
   return { g, body, forks, ze, wheels };
 }
+function buildMaquina(){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
+  const green = toon(0x5a7a6a), dark = toon(0x3a4a42), steel = toon(0x8a9098), yel = toon(0xf2c230);
+  mesh(new THREE.BoxGeometry(3.2, 2.4, 1.8), green, 0, 1.6, 0, body);
+  mesh(new THREE.BoxGeometry(3.4, 0.3, 2.0), dark, 0, 2.9, 0, body);
+  mesh(new THREE.BoxGeometry(3.3, 0.4, 1.9), yel, 0, 0.5, 0, body);
+  for (const x of [-1.2, -0.4, 0.4, 1.2]) { const w = mesh(new THREE.CylinderGeometry(0.28, 0.28, 2.0, 12), dark, x, 0.28, 0, body); w.rotation.x = Math.PI / 2; }
+  mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: TX.maqScreen }), 0.2, 2.05, 0.91, body, false);
+  const eyesM = [-0.9, 1.3].map(x => mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3d3d }), x, 2.3, 0.92, body, false));
+  const slot = mesh(new THREE.BoxGeometry(0.2, 0.1, 1.2), toon(0x1a1a1e), 1.62, 1.3, 0, body);
+  const paper = mesh(new THREE.BoxGeometry(0.5, 0.03, 0.9), toon(0xf4f0e6), 1.8, 1.3, 0, body, false);
+  const chim = mesh(new THREE.CylinderGeometry(0.25, 0.3, 1.2, 10), steel, -1.1, 3.6, -0.4, body);
+  const gearsM = [[-0.6, 1.4, 0.55], [0.7, 1.0, 0.4]].map(([x, y, r]) => { const gg = new THREE.Group(); gg.position.set(x, y, 0.95); body.add(gg);
+    const d = mesh(new THREE.CylinderGeometry(r, r, 0.12, 16), steel, 0, 0, 0, gg, false); d.rotation.x = Math.PI / 2;
+    for (let i = 0; i < 10; i++) { const a = i / 10 * Math.PI * 2, tt = mesh(new THREE.BoxGeometry(0.14, 0.16, 0.12), dark, Math.cos(a) * r, Math.sin(a) * r, 0, gg, false); tt.rotation.z = a; } return gg; });
+  return { g, body, eyesM, paper, gearsM, chim };
+}
 function buildTabeliao(){
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
   const robe = toon(0x1f1a2a), skin = toon(0xe0b088), white = toon(0xf4f4f0), blk = toon(0x1a0b12), gold = toon(0xd8b04a), grey = toon(0xc8c8d0);
@@ -2510,7 +2709,7 @@ function buildDynamic(){
     mesh(new THREE.CylinderGeometry(0.06, 0.08, 2, 8), toon(0x5a6070), 0, 1, -0.6, g);
     const lamp = mesh(new THREE.SphereGeometry(0.22, 12, 10), new THREE.MeshBasicMaterial({ color: 0x8a8f9a }), 0, 2.15, -0.6, g); return lamp; });
   V.plats = plats.map(m => { const g = add(new THREE.Group()); scene.add(g);
-    mesh(new THREE.BoxGeometry(3, 0.35, 1.6), toon(0xffffff, { map: LV.theme === 'office' ? TX.lift : LV.theme === 'roofs' ? TX.scaffold : LV.theme === 'palace' ? TX.palBlock : LV.theme === 'cartorio' ? TX.cartBox : TX.crate }), 1.5, -0.175, 0, g);
+    mesh(new THREE.BoxGeometry(3, 0.35, 1.6), toon(0xffffff, { map: LV.theme === 'office' ? TX.lift : LV.theme === 'roofs' ? TX.scaffold : LV.theme === 'palace' ? TX.palBlock : LV.theme === 'cartorio' ? TX.cartBox : LV.theme === 'fabrica' ? TX.fabShelf : TX.crate }), 1.5, -0.175, 0, g);
     for (const x of [0.4, 2.6]) mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 6), toon(0x6b6f7a), x, -0.8, 0, g, false);
     return g; });
   if (selo) { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(selo.x), WY(selo.y), 0);
@@ -2561,13 +2760,34 @@ function buildDynamic(){
     const sh = mesh(new THREE.CircleGeometry(0.6, 16), new THREE.MeshBasicMaterial({ color: 0x000000, transparent: true, opacity: 0.35 }), 0, 0, 0.2, g, false); sh.rotation.x = -Math.PI / 2;
     return { g, box, sh }; });
   V.shots = [];
+  V.clocks = clocks.map(ck => { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(ck.x), WY(ck.y), -0.6);
+    mesh(new THREE.CylinderGeometry(0.07, 0.09, 1.3, 8), toon(0x5a6068), 0, 0.65, 0, g);
+    mesh(new THREE.BoxGeometry(0.9, 1.0, 0.5), toon(0x8a5a2e), 0, 1.6, 0, g);
+    mesh(new THREE.PlaneGeometry(0.76, 0.76), new THREE.MeshBasicMaterial({ map: TX.clockFace }), 0, 1.65, 0.26, g, false);
+    const hand = mesh(new THREE.BoxGeometry(0.04, 0.3, 0.02), toon(0xd7263d), 0, 1.65, 0.28, g, false); hand.geometry.translate(0, 0.13, 0);
+    const lamp = mesh(new THREE.SphereGeometry(0.1, 8, 6), new THREE.MeshBasicMaterial({ color: 0x3fdf6a }), 0, 2.22, 0, g, false);
+    mesh(new THREE.BoxGeometry(0.3, 0.06, 0.1), toon(0x2a2a30), 0, 1.15, 0.26, g, false);
+    return { g, hand, lamp }; });
+  V.gears = gearsDeco.map(gd => { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(gd.x), WY(gd.y), -1.2); const R = gd.r / T;
+    const metal = toon(0x7a8088), dark = toon(0x4a4e56);
+    const disc = mesh(new THREE.CylinderGeometry(R * 0.32, R * 0.32, 0.3, 24), metal, 0, 0, 0, g, false); disc.rotation.x = Math.PI / 2;
+    for (let i = 0; i < 14; i++) { const a = i / 14 * Math.PI * 2, tt = mesh(new THREE.BoxGeometry(0.4, 0.5, 0.3), dark, Math.cos(a) * R * 0.36, Math.sin(a) * R * 0.36, 0, g, false); tt.rotation.z = a; }
+    for (let i = 0; i < gd.n; i++) { const a = -(i * Math.PI * 2 / gd.n), arm = mesh(new THREE.BoxGeometry(R, 0.22, 0.2), dark, Math.cos(a) * R / 2, Math.sin(a) * R / 2, 0.1, g, false); arm.rotation.z = a; }
+    const hub = mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.5, 12), toon(0xf2c230), 0, 0, 0.1, g, false); hub.rotation.x = Math.PI / 2;
+    return g; });
+  V.chase = null;
+  if (LV.chase) { const g = add(new THREE.Group()); scene.add(g); const pm = toon(0xffffff, { map: TX.prazo });
+    mesh(new THREE.BoxGeometry(4, 18, 3.4), pm, -2, 7.5, 0, g);
+    for (let i = 0; i < 6; i++) { const rl = mesh(new THREE.CylinderGeometry(0.5, 0.5, 3.6, 12), toon(0x5a6068), 0.2, 0.6 + i * 2.6, 0, g); rl.rotation.x = Math.PI / 2; }
+    for (let i = 0; i < 10; i++) { const sh = mesh(new THREE.BoxGeometry(0.7, 0.05, 0.5), toon(0xf4f0e6), 0.4 + Math.random() * 0.6, 1 + Math.random() * 12, (Math.random() - 0.5) * 2.4, g, false); sh.rotation.z = Math.random(); }
+    V.chase = g; }
   V.golds = golds.map(gd => { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(gd.x), WY(gd.y), 0);
     const m = mesh(new THREE.CylinderGeometry(0.34, 0.34, 0.08, 20), [toon(0xd8a030), new THREE.MeshBasicMaterial({ map: TX.goldSeal, transparent: true, opacity: gd.had ? 0.45 : 1 }), new THREE.MeshBasicMaterial({ map: TX.goldSeal, transparent: true, opacity: gd.had ? 0.45 : 1 })], 0, 0, 0, g, false); m.rotation.x = Math.PI / 2;
     if (!gd.had) { const l = new THREE.PointLight(0xffd23f, 0.7, 3); g.add(l); } return g; });
   V.boss = null; V.gate = null; V.crates = []; V.npc = null;
   if (npc) { V.npc = add(buildZe()); V.npc.position.set(WX(npc.x), WY(npc.y), -0.9); V.npc.rotation.y = -0.5; V.npc.scale.x = -1; }
   if (boss) {
-    V.boss = boss.kind === 'tabeliao' ? buildTabeliao() : boss.kind === 'panel' ? buildPanel() : boss.kind === 'freezer' ? buildFreezer() : boss.kind === 'truck' ? buildTruck() : boss.kind === 'balloon' ? buildBalloon() : boss.kind === 'monster' ? buildMonster() : buildBoss(); add(V.boss.g); if (V.boss.stamp) { add(V.boss.stamp); add(V.boss.wv); }
+    V.boss = boss.kind === 'maquina' ? buildMaquina() : boss.kind === 'tabeliao' ? buildTabeliao() : boss.kind === 'panel' ? buildPanel() : boss.kind === 'freezer' ? buildFreezer() : boss.kind === 'truck' ? buildTruck() : boss.kind === 'balloon' ? buildBalloon() : boss.kind === 'monster' ? buildMonster() : buildBoss(); add(V.boss.g); if (V.boss.stamp) { add(V.boss.stamp); add(V.boss.wv); }
     const gate = add(new THREE.Group()); scene.add(gate);
     for (let i = 0; i < 9; i++) mesh(new THREE.BoxGeometry(1, 1, 1.4), MAT.crate, boss.a0 - 0.5, 0.5 + i, 0, gate);
     V.gate = gate;
@@ -2624,6 +2844,7 @@ function syncDynamic(){
     if (o.parts.drawer) o.parts.drawer.position.x = 0.38 + Math.abs(Math.sin(e.t * 0.2)) * 0.12;
     if (o.parts.arm) o.parts.arm.rotation.z = (e.fire || 0) > 0 ? -0.9 * Math.sin((e.fire / 12) * Math.PI) : Math.sin(e.t * 0.08) * 0.1;
     if (o.parts.shield) o.body.position.y = Math.abs(Math.sin(e.t * 0.2)) * 0.05;
+    if (o.parts.spin && !(G.freeze > 0)) o.parts.spin.rotation.z -= e.vx * 0.12;
     if (o.parts.legs || o.parts.wheels) o.body.position.y = Math.abs(Math.sin(e.t * 0.25)) * 0.04;
     if (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato') o.body.scale.y = e.hy === 0 && (e.land || 0) < 8 ? 0.72 : (e.hvy < 0 ? 1.15 : 1);
   });
@@ -2649,18 +2870,28 @@ function syncDynamic(){
     else { o.box.visible = true; o.sh.visible = d.state === 'fall'; o.box.position.set(WX(d.x), WY(d.y), 0); if (d.state === 'fall') o.sh.position.set(WX(d.x), WY(d.land) + 0.03, 0.2); } });
   while (V.shots && V.shots.length < shots.length) { const g = new THREE.Group(); mesh(GEO.shotB || (GEO.shotB = new THREE.BoxGeometry(0.4, 0.22, 0.4)), MAT.shotR || (MAT.shotR = toon(0xd7263d)), 0, 0, 0, g); mesh(GEO.shotH || (GEO.shotH = new THREE.CylinderGeometry(0.06, 0.06, 0.26, 6)), MAT.shotW || (MAT.shotW = toon(0x6b3f15)), 0, 0.22, 0, g); scene.add(g); V.shots.push(g); V.all.push(g); }
   if (V.shots) V.shots.forEach((g, i) => { const sh = shots[i]; g.visible = !!sh && sh.alive; if (sh) { g.position.set(WX(sh.x), WY(sh.y), 0); g.rotation.z = -sh.x * 0.05; } });
+  if (V.clocks) clocks.forEach((ck, i) => { const o = V.clocks[i]; o.lamp.material.color.setHex(ck.cd > 0 ? 0xd7263d : (t % 30 < 15 ? 0x3fdf6a : 0x1f8a3a)); o.hand.rotation.z = G.freeze > 0 ? 0 : -t * 0.05; });
+  if (V.gears) gearsDeco.forEach((gd, i) => { const m = plats[gd.first]; if (m) V.gears[i].rotation.z = -(m.t); });
+  if (V.chase && LV.chase) { V.chase.position.set(WX(LV.chase.x) + (G.freeze > 0 ? 0 : (Math.random() - 0.5) * 0.06), 0, 0); V.chase.children.forEach((c, k) => { if (k > 0 && k < 7 && !(G.freeze > 0)) c.rotation.y -= 0.2; }); }
   if (V.golds) golds.forEach((gd, i) => { const g = V.golds[i]; g.visible = !gd.got; g.rotation.y = t * 0.06; g.position.y = WY(gd.y) + Math.sin(t * 0.07 + i) * 0.1; });
   if (V.crushers) crushers.forEach((cr, i) => { const o = V.crushers[i], hy = WY(cr.y), sh = cr.state === 'warn' ? (Math.random() - 0.5) * 0.1 : 0;
     o.head.position.set(sh, hy, 0); const top = 12.5, len = Math.max(0.1, top - (hy + 2.1)); o.piston.scale.y = len; o.piston.position.y = hy + 2.1 + len / 2;
     o.shadow.position.y = WY(13 * T) + 0.03; const k = cr.state === 'warn' ? 1 + cr.t / 34 : cr.state === 'up' ? 0.5 : 1.6; o.shadow.scale.setScalar(k * 0.7); o.shadow.material.opacity = cr.state === 'up' ? 0.12 : 0.32; });
-  if (TX.beltR) { TX.beltR.offset.x = -(t * 0.02) % 1; TX.beltL.offset.x = (t * 0.02) % 1; }
+  if (TX.beltR && !(G.freeze > 0)) { TX.beltR.offset.x = -(t * 0.02) % 1; TX.beltL.offset.x = (t * 0.02) % 1; }
   if (V.buttons) buttons.forEach((bn, i) => { const o = V.buttons[i]; o.light.material.color.setHex(bn.used ? 0x3fdf6a : (t % 30 < 15 ? 0xff3d3d : 0x8a1a1a)); o.ticket.visible = bn.used; });
   if (V.doors) doors.forEach((d, i) => { const g = V.doors[i]; d.lift += ((d.open ? 1 : 0) - d.lift) * 0.06; g.position.y = g.userData.base + d.lift * (g.userData.h + 1); g.visible = d.lift < 0.98; });
   if (V.boss && boss) {
     const b = boss, o = V.boss;
     o.g.position.set(WX(b.x), WY(b.y), 0); o.g.scale.x = b.dir;
     o.g.visible = b.state !== 'idle' && !(b.inv > 0 && t % 6 < 3);
-    if (b.kind === 'tabeliao') {
+    if (b.kind === 'maquina') {
+      const fz = b.state === 'frozen'; o.g.scale.x = 1;
+      o.eyesM.forEach(m => m.material.color.setHex(fz ? 0x8fd3ff : (t % 20 < 10 || b.state === 'charge' ? 0xff3d3d : 0xb81c30)));
+      if (!fz && b.state !== 'dead') o.gearsM.forEach((gg, i) => gg.rotation.z += (i ? -0.12 : 0.08) * (b.state === 'charge' ? 2 : 1));
+      o.paper.position.x = 1.8 + (b.print || 0) * 0.04; o.body.position.y = fz || b.state === 'dead' ? 0 : Math.abs(Math.sin(t * 0.3)) * 0.05;
+      o.body.rotation.z = b.state === 'dead' ? -Math.min(0.35, b.t / 300) : b.state === 'charge' && b.t < 30 ? Math.sin(t) * 0.03 : 0;
+      if (!fz && b.state !== 'dead' && t % 10 === 0) addPart(b.x - 18 * b.dir, b.y - 72, 0, -1, -0.01, 40, 0x6a6e76, 1.6);
+    } else if (b.kind === 'tabeliao') {
       o.torso.rotation.z = -(b.lean || 0) * 0.55; o.head.rotation.z = (b.lean || 0) * 0.2;
       o.body.rotation.z = b.state === 'dead' ? -Math.min(1.4, (b.lean || 0) * 0.9) : 0;
       o.stamp.position.set(WX(b.sx || b.x), WY(b.sy || b.y - 92), 0); o.stamp.visible = b.state !== 'idle' && b.state !== 'dead';
@@ -2719,10 +2950,11 @@ function syncDynamic(){
     }
     if (V.gate) V.gate.visible = !!G.lock;
     while (V.crates.length < b.crates.length) { const m = new THREE.Mesh(GEO.paperStack || (GEO.paperStack = new THREE.BoxGeometry(0.8, 0.5, 0.7)), MAT.paper || (MAT.paper = toon(0xffffff, { map: TX.paper }))); m.castShadow = true; scene.add(m); V.crates.push(m); V.all.push(m); }
-    V.crates.forEach((m, i) => { const c = b.crates[i]; m.visible = !!c && c.alive; if (!c) return; m.position.set(WX(c.x), WY(c.y), 0); m.rotation.z = c.rot;
-      const k = c.kind; m.geometry = k === 'tomato' ? (GEO.tomato || (GEO.tomato = new THREE.SphereGeometry(0.26, 12, 10))) : GEO.paperStack;
-      if (k === 'ticket' || k === 'boleto') m.scale.set(0.6, 0.08, 0.5); else if (k === 'ice') m.scale.set(0.8, 1.3, 0.9); else m.scale.set(1, 1, 1);
-      m.material = k === 'ice' ? (MAT.iceCube || (MAT.iceCube = new THREE.MeshToonMaterial({ color: 0xbfe8ff, gradientMap: gm, transparent: true, opacity: 0.85 }))) : k === 'tomato' ? (MAT.tomato || (MAT.tomato = toon(0xd7263d))) : k === 'boleto' ? (MAT.boleto || (MAT.boleto = toon(0xffffff, { map: TX.boleto }))) : MAT.paper; });
+    V.crates.forEach((m, i) => { const c = b.crates[i]; m.visible = !!c && c.alive; if (!c) return; m.position.set(WX(c.x), WY(c.y), 0); m.rotation.x = 0; m.rotation.y = 0; m.rotation.z = c.rot;
+      const k = c.kind; m.geometry = k === 'gearRoll' ? (GEO.gearRoll || (GEO.gearRoll = new THREE.CylinderGeometry(0.55, 0.55, 0.4, 10))) : k === 'tomato' ? (GEO.tomato || (GEO.tomato = new THREE.SphereGeometry(0.26, 12, 10))) : GEO.paperStack;
+      if (k === 'gearRoll') m.rotation.set(Math.PI / 2, c.rot, 0, 'ZXY');
+      if (k === 'gearRoll') m.scale.set(1, 1, 1); else if (k === 'ticket' || k === 'boleto') m.scale.set(0.6, 0.08, 0.5); else if (k === 'ice') m.scale.set(0.8, 1.3, 0.9); else m.scale.set(1, 1, 1);
+      m.material = k === 'gearRoll' ? (MAT.gearRoll || (MAT.gearRoll = toon(0x9aa4b0))) : k === 'ice' ? (MAT.iceCube || (MAT.iceCube = new THREE.MeshToonMaterial({ color: 0xbfe8ff, gradientMap: gm, transparent: true, opacity: 0.85 }))) : k === 'tomato' ? (MAT.tomato || (MAT.tomato = toon(0xd7263d))) : k === 'boleto' ? (MAT.boleto || (MAT.boleto = toon(0xffffff, { map: TX.boleto }))) : MAT.paper; });
   }
 }
 function syncHero(){
@@ -2773,6 +3005,7 @@ function updateCamera(snap){
     if (G.lock && boss && boss.kind === 'balloon') ty = Math.max(ty, 4.2);
     if (G.lock && boss && boss.kind === 'monster') ty = Math.max(ty, 3.4);
     if (G.lock && boss && boss.kind === 'tabeliao') ty = Math.max(ty, 3.6);
+    if (G.lock && boss && boss.kind === 'maquina') ty = Math.max(ty, 3.2);
   }
   tx = Math.max(6, Math.min(COLS - 11, tx));
   if (snap) { cam.x = tx; cam.y = ty; }
@@ -2788,15 +3021,16 @@ function updHUD(){
   const secs = Math.floor(G.frames / 60), tm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
   const warn = G.ringsN === 0 && G.t % 40 < 20;
   const bh = G.lock && boss && boss.state !== 'dead' ? boss.hp : -1;
-  const gn = golds.filter(g => g.got).length;
-  const key = `${G.score}|${tm}|${G.ringsN}|${G.lives}|${warn}|${selo && selo.got}|${bh}|${gn}|${golds.length}`;
+  const gn = golds.filter(g => g.got).length, fz = G.freeze > 0 ? Math.ceil(G.freeze / 60) : 0;
+  $('frz').classList.toggle('hidden', !fz || G.state !== 'play'); if (fz) $('frz').textContent = '⏸ Máquinas paradas: ' + fz;
+  const key = `${G.score}|${tm}|${G.ringsN}|${G.lives}|${warn}|${selo && selo.got}|${bh}|${gn}|${golds.length}|${fz}`;
   if (key === hudCache) return; hudCache = key;
   $('hScore').textContent = G.score; $('hTime').textContent = tm; $('hRings').textContent = G.ringsN;
   $('hRingK').classList.toggle('warn', warn); $('hLives').textContent = '×' + G.lives;
   $('hGoldK').classList.toggle('hidden', !golds.length); $('hGold').classList.toggle('hidden', !golds.length); $('hGold').textContent = gn + '/' + golds.length; $('lives').classList.toggle('low', golds.length > 0);
   $('seloHud').classList.toggle('hidden', !(LV && G.docs[LV.zone]) || G.state === 'title');
   $('bossHud').classList.toggle('hidden', bh < 0);
-  if (bh >= 0) $('bossName').textContent = boss.kind === 'tabeliao' ? 'Tabelião' : 'Dr. Carimbo';
+  if (bh >= 0) $('bossName').textContent = boss.kind === 'tabeliao' ? 'Tabelião' : boss.kind === 'maquina' ? 'Máquina' : 'Dr. Carimbo';
   if (bh >= 0) $('bossPips').innerHTML = Array.from({ length: (boss && boss.maxHp) || 6 }, (_, i) => `<i class="${i < bh ? '' : 'off'}"></i>`).join(' ');
 }
 
@@ -2825,6 +3059,8 @@ function confetti(){
   setTimeout(() => box.remove(), 9000);
 }
 const NOTES = {
+  8: { found: 'Você achou o Registro do Funcionário no alto da fábrica!', hint: 'Tem um documento escondido nesta fase: o Registro do Funcionário. Dica: procure lá no alto, depois da segunda roda gigante.', act2: 'Agora vem o Ato 3: a Máquina da Folha.',
+       winGot: 'Você parou a Máquina da Folha e o funcionário da Adega está registrado!', winMiss: 'Você parou a Máquina da Folha! Faltou o Registro do Funcionário: ele está no alto, depois da segunda roda gigante do Ato 1.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
   7: { found: 'Você achou o Contrato Social no alto das prateleiras!', hint: 'Tem um documento escondido nesta fase: o Contrato Social. Dica: procure lá no alto.', act2: 'Agora vem o Ato 3: o Tabelião Autenticador.',
        winGot: 'Você venceu o Tabelião e a Adega já tem o Contrato Social!', winMiss: 'Você venceu o Tabelião! Faltou o Contrato Social: ele está no alto das prateleiras do Ato 1 desta zona.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
   1: { found: 'Você achou o CNPJ escondido nos telhados!', hint: 'Tem um documento escondido nesta fase: o CNPJ. Dica: procure lá no alto.', act2: 'Agora vem o Ato 3: o Doutor Carimbo está esperando na Repartição.',
@@ -2841,6 +3077,8 @@ const NOTES = {
        winGot: '', winMiss: '', next: '' }
 };
 const EDU = {
+  8: { title: 'Contratar o primeiro funcionário',
+       text: 'Registrar o funcionário em carteira é obrigatório, e hoje tudo é digital: a contratação é informada ao governo pelo eSocial. Além do salário, a empresa deposita o FGTS (8% por mês), guarda dinheiro para o 13º salário e para as férias com mais um terço e recolhe o INSS. Somando tudo, um funcionário pode custar de 70% a 100% a mais que o salário, conforme o regime de impostos da empresa. O MEI pode ter um único empregado, que recebe o salário mínimo ou o piso da categoria.' },
   7: { title: 'Contrato social e firma reconhecida',
        text: 'O contrato social é a "certidão de nascimento" de uma sociedade: diz quem são os sócios, o endereço, a atividade e o capital, e é registrado na Junta Comercial do estado. O MEI não precisa dele, porque usa o CCMEI; mas, quando o negócio ganha um sócio, ele vira uma sociedade e passa a precisar. E sobre o cartório: desde novembro de 2018, a Lei 13.726 (Lei da Desburocratização) dispensa o reconhecimento de firma e a autenticação de cópias na relação com órgãos públicos. O próprio servidor confere a assinatura com o documento de identidade. Entre empresas e pessoas, porém, muita gente ainda pede firma reconhecida.' },
   6: { title: 'Certidão Negativa: tudo em dia',
@@ -2906,6 +3144,7 @@ function finish(){
 function startAct(n, fresh, training){
   audio();
   ['title','done','over'].forEach(id => $(id).classList.add('hidden')); $('eduBox').classList.add('hidden'); closeMap();
+  $('tip').classList.add('hidden');
   G.act = n; G.training = !!training; G.hintPop = null; G.hits = 0; G.goalRun = null; G.goldRun = {}; if (fresh) { G.score = 0; G.lives = 3; }
   G.check = null; buildLevel(); spawn(); applySky(LV.sky); buildStatic(); buildDynamic();
   for (const p of parts) p.life = 0; updParts();
@@ -2922,6 +3161,8 @@ function startAct(n, fresh, training){
 }
 const TIPS = {
   arrancada: { t: 'Nova habilidade: Arrancada!', d: () => (isTouch ? 'Parado, segure o botão ARRANCAR e solte: o Motoca dispara rolando.' : 'Parado, segure ↓ (ou Shift) e solte: o Motoca dispara rolando.') + ' Quanto mais tempo segurar, mais forte. A arrancada quebra as pilhas de papelada e derruba inimigos. Correndo e pulando rolando, ela vai longe!' + ' Na Temporada 2, cada fase também tem 3 selos dourados escondidos nos lugares mais difíceis.' },
+  ponto: { t: 'Relógio de ponto!', d: () => 'Encoste no relógio para bater o ponto: prensas, esteiras e engrenagens param por alguns segundos. Cuidado com as engrenagens de dentes: pular em cima machuca, só a arrancada derruba. E as rodas gigantes giram com plataformas: suba e aproveite a volta.' },
+  prazo: { t: 'O prazo está chegando!', d: () => 'Uma parede de papelada vem atrás de você e não para. Corra sem parar! Bater o ponto no relógio também segura o prazo por alguns segundos. Correndo, toque ' + (isTouch ? 'ARRANCAR' : '↓ (ou Shift)') + ' para rolar e quebrar a papelada sem perder tempo.' },
   parede: { t: 'Nova habilidade: Pulo na parede!', d: () => 'No ar, encoste numa parede segurando a direção dela: o Motoca escorrega devagar. Aí ' + (isTouch ? 'toque PULAR' : 'aperte o pulo') + ' para saltar para o outro lado. Entre duas paredes, dá para subir pulando de uma para a outra.' }
 };
 function showTip(k){
@@ -3088,7 +3329,7 @@ function openMap(o){
   MAP.keep = !!o.keep; MAP.next = to; MAP.pos = from - 1 - bse; MAP.target = to - 1 - bse; MAP.sel = to - 1 - bse; MAP.on = true; updSetBtn();
   G.state = 'map';
   ['title','done','over','pause'].forEach(id => { const el = $(id); if (el) el.classList.add('hidden'); });
-  ['hud','lives','seloHud','bossHud','touch','card'].forEach(id => $(id).classList.add('hidden'));
+  ['hud','lives','seloHud','bossHud','touch','card','frz'].forEach(id => $(id).classList.add('hidden'));
   $('mapScreen').classList.remove('hidden'); $('pauseBtn').classList.add('hidden'); fitMap(); updMapPanel(); playSong('mapa');
   if (!MAP.loop) { MAP.loop = true; requestAnimationFrame(mapFrame); }
 }
@@ -3399,7 +3640,7 @@ function frame(now){
 }
 const fontsReady = document.fonts ? Promise.race([document.fonts.load('800 40px "Baloo 2"'), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve();
 fontsReady.then(() => {
-  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0, 3: loadNum('motoca-doc3') > 0, 4: loadNum('motoca-doc4') > 0, 5: loadNum('motoca-doc5') > 0, 6: loadNum('motoca-doc6') > 0, 7: loadNum('motoca-doc7') > 0 };
+  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0, 3: loadNum('motoca-doc3') > 0, 4: loadNum('motoca-doc4') > 0, 5: loadNum('motoca-doc5') > 0, 6: loadNum('motoca-doc6') > 0, 7: loadNum('motoca-doc7') > 0, 8: loadNum('motoca-doc8') > 0 };
   makeTextures(); buildLevel(); applySky(LV.sky); spawn(); buildStatic(); buildDynamic(); hero = buildHero(); refreshTitle();
   $('loading').remove(); $('title').classList.remove('hidden');
   updateCamera(true); requestAnimationFrame(frame);
