@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Balcão · Validar cupom · Adega do Edu</title>
+<style>
+:root{
+  --fundo:#F3F6F1; --cartao:#FFFFFF; --texto:#1C2420; --sub:#56625B; --borda:#2A1A12; --verde:#24804F; --verde-claro:#E3F6EA; --vermelho:#C2362B; --vermelho-claro:#FDE7E4; --amarelo:#FFC93C;
+  color-scheme:light;
+  box-sizing:border-box; padding-top:env(safe-area-inset-top,0px); padding-bottom:env(safe-area-inset-bottom,0px);
+}
+@media (prefers-color-scheme: dark){
+  :root:not([data-theme="light"]){ --fundo:#17241E; --cartao:#21302A; --texto:#ECF1ED; --sub:#A9B7AF; --borda:#0B120E; --verde-claro:#1E3A2A; --vermelho-claro:#3E2220; color-scheme:dark; }
+}
+:root[data-theme="dark"]{ --fundo:#17241E; --cartao:#21302A; --texto:#ECF1ED; --sub:#A9B7AF; --borda:#0B120E; --verde-claro:#1E3A2A; --vermelho-claro:#3E2220; color-scheme:dark; }
+*{box-sizing:border-box}
+html,body{margin:0;min-height:100%}
+body{background:var(--fundo);color:var(--texto);font-family:system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;line-height:1.45}
+main{max-width:28rem;margin:0 auto;padding:24px 16px 40px}
+h1{font-size:1.45rem;margin:0}
+p.sub{color:var(--sub);margin:4px 0 18px}
+.cartao{background:var(--cartao);border:2px solid var(--borda);border-radius:16px;padding:16px;margin-top:14px}
+label{display:block;font-weight:700;margin-bottom:6px}
+input{width:100%;font:inherit;font-size:1.25rem;padding:12px 14px;border:2px solid var(--borda);border-radius:12px;background:var(--fundo);color:var(--texto)}
+#codigo{text-transform:uppercase;letter-spacing:.08em;font-weight:800}
+input:focus-visible,button:focus-visible{outline:3px solid var(--amarelo);outline-offset:2px}
+.linha{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}
+button{font:inherit;font-weight:800;font-size:1.05rem;padding:13px 12px;border-radius:12px;border:2px solid var(--borda);cursor:pointer;background:var(--cartao);color:var(--texto)}
+button.prim{background:var(--verde);color:#fff}
+button:disabled{opacity:.5;cursor:default}
+.res{margin-top:14px;border-radius:14px;padding:14px;border:2px solid var(--borda)}
+.res.ok{background:var(--verde-claro)}
+.res.ruim{background:var(--vermelho-claro)}
+.res .valor{font-size:2.2rem;font-weight:900;margin:2px 0}
+.compra{margin-top:12px;padding-top:12px;border-top:2px dashed var(--borda)}
+.compra .desc{font-size:1.6rem;font-weight:900;margin-top:8px}
+.compra .pequeno{margin-top:4px}
+.res dl{display:grid;grid-template-columns:auto 1fr;gap:4px 12px;margin:8px 0 0}
+.res dt{color:var(--sub)}
+.res dd{margin:0;font-weight:700}
+.status{font-weight:900;font-size:1.1rem}
+.pequeno{font-size:.85rem;color:var(--sub);margin-top:10px}
+a{color:inherit}
+h2{font-size:1.15rem;margin:0}
+.cab-res{display:flex;justify-content:space-between;align-items:center;gap:10px}
+.cab-res button{padding:9px 12px;font-size:.95rem}
+.grade{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:10px}
+.num{border:2px solid var(--borda);border-radius:12px;padding:8px 10px;background:var(--fundo)}
+.num b{display:block;font-size:1.35rem;font-weight:900;font-variant-numeric:tabular-nums}
+.num span{font-size:.82rem;color:var(--sub)}
+.num.dest{background:var(--verde-claro)}
+.sub-tit{font-weight:800;margin:16px 0 6px;font-size:.95rem}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+th,td{text-align:left;padding:6px 4px;border-bottom:1px solid color-mix(in srgb,var(--sub) 35%,transparent)}
+th{color:var(--sub);font-weight:700;font-size:.8rem}
+td.n,th.n{text-align:right;font-variant-numeric:tabular-nums}
+.cod-grande{font:900 2.4rem/1.1 ui-monospace,Menlo,Consolas,monospace;letter-spacing:.18em;margin:8px 0;user-select:all}
+.vazio{color:var(--sub);font-size:.9rem;margin:6px 0}
+.rolagem{overflow-x:auto}
+.rolagem.val td,.rolagem.val th{white-space:nowrap}
+.mod-item{border:2px solid var(--borda);border-radius:12px;padding:10px;margin:8px 0;background:var(--fundo)}
+.mod-item.alerta{border-color:var(--vermelho);background:var(--vermelho-claro)}
+.mod-item .quem{font-weight:900;font-size:.9rem;display:flex;justify-content:space-between;gap:8px}
+.mod-item .quem span{color:var(--sub);font-weight:700;font-size:.8rem}
+.mod-item .txt{margin:6px 0 8px;font-size:1rem;word-wrap:break-word}
+.mod-acoes{display:flex;gap:8px;flex-wrap:wrap}
+.mod-acoes button{padding:8px 12px;font-size:.9rem}
+.mod-acoes .ok{background:#3CB371;color:#fff}
+.mod-acoes .nao{background:#C2362B;color:#fff}
+.mod-linha{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:8px}
+.mod-linha input,.mod-linha select{padding:9px 10px;border:2px solid var(--borda);border-radius:10px;font-size:1rem;background:var(--fundo);color:var(--texto)}
+.mod-linha input[type=number]{width:70px}
+.chave-chat{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:10px 12px;border-radius:12px;font-weight:900}
+.chave-chat.on{background:var(--verde-claro)}.chave-chat.off{background:var(--fundo);border:2px solid var(--borda)}
+</style>
+</head>
+<body>
+<main>
+  <h1>Balcão · Validar cupom</h1>
+  <p class="sub">Adega do Edu Tycoon. Página de uso exclusivo da Adega.</p>
+
+  <section class="cartao" id="boxSenha">
+    <label for="senha">Senha do balcão</label>
+    <input id="senha" type="password" autocomplete="current-password" placeholder="A senha que você definiu no Supabase">
+    <p class="pequeno">A senha fica guardada só nesta aba e some ao fechar o navegador.</p>
+  </section>
+
+  <section class="cartao">
+    <label for="codigo">Código do cupom</label>
+    <input id="codigo" inputmode="text" autocomplete="off" autocapitalize="characters" placeholder="EDU-XXXX-XXXX" maxlength="13">
+    <div class="linha">
+      <button id="btnConsultar" type="button">Consultar</button>
+      <button id="btnUsar" type="button" class="prim" disabled>Dar baixa</button>
+    </div>
+    <div id="resultado" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="cartao" id="boxCodSenha">
+    <h2>🔑 Código para nova senha</h2>
+    <p class="pequeno">Para o jogador que esqueceu a senha. <b>Confira que é a própria pessoa</b> (ou o responsável, se for criança) antes de entregar o código. Ele vale por 24 horas e só serve uma vez.</p>
+    <label for="apelidoSenha">Apelido do jogador</label>
+    <input id="apelidoSenha" autocomplete="off" maxlength="20" placeholder="Como aparece no ranking">
+    <div class="linha"><button id="btnCodSenha" type="button" class="prim">Gerar código</button></div>
+    <div id="resCodSenha" role="status" aria-live="polite"></div>
+  </section>
+
+  <section class="cartao" id="boxProgresso">
+    <div class="cab-res"><h2>📈 Progresso dos jogadores</h2><button type="button" id="btnProgresso">Atualizar</button></div>
+    <div id="progresso"><p class="vazio">Digite a senha e toque em Atualizar para ver o progresso de cada jogador.</p></div>
+  </section>
+
+  <section class="cartao" id="boxSeguranca">
+    <div class="cab-res"><h2>🛡️ Segurança</h2><button type="button" id="btnSeguranca">Atualizar</button></div>
+    <div id="seguranca"><p class="vazio">Digite a senha e toque em Atualizar para ver suspeitas de fraude.</p></div>
+  </section>
+
+  <section class="cartao" id="boxModeracao">
+    <div class="cab-res"><h2>🛡️ Moderação do Papo</h2><button type="button" id="btnModeracao">Atualizar</button></div>
+    <div id="moderacao"><p class="vazio">Digite a senha e toque em Atualizar para moderar o Papo da Adega.</p></div>
+  </section>
+
+  <section class="cartao" id="boxOnline">
+    <div class="cab-res"><h2>🟢 Online agora</h2><button type="button" id="btnOnline">Atualizar</button></div>
+    <div id="online"><p class="vazio">Digite a senha e toque em Atualizar para ver quem está jogando.</p></div>
+  </section>
+
+  <section class="cartao" id="boxResumo">
+    <div class="cab-res"><h2>Resumo dos cupons</h2><button type="button" id="btnResumo">Atualizar</button></div>
+    <div id="resumo"><p class="vazio">Digite a senha e toque em Atualizar para ver o resumo.</p></div>
+  </section>
+</main>
+<script>
+(function(){
+'use strict';
+const SUPABASE_URL='https://pigxqmdmhnagghdzwvmu.supabase.co';
+const SUPABASE_CHAVE='sb_publishable_kUvkWcIttr3dcKMyab3dOA_2jW0taoi';
+const $=s=>document.querySelector(s);
+async function rpc(nome,corpo){
+  const h={'Content-Type':'application/json','apikey':SUPABASE_CHAVE};
+  if(!SUPABASE_CHAVE.startsWith('sb_')) h.Authorization='Bearer '+SUPABASE_CHAVE;
+  const r=await fetch(SUPABASE_URL.replace(/\/+$/,'')+'/rest/v1/rpc/'+nome,{method:'POST',headers:h,body:JSON.stringify(corpo)});
+  const t=await r.text(); let d=null; try{d=t?JSON.parse(t):null;}catch(e){}
+  if(!r.ok) throw new Error((d&&d.message)||('erro '+r.status));
+  return d;
+}
+const reais=c=>'R$ '+(c/100).toFixed(2).replace('.',',');
+const dataHora=d=>new Date(d).toLocaleString('pt-BR',{day:'2-digit',month:'2-digit',year:'numeric',hour:'2-digit',minute:'2-digit'});
+const MSG={senha_invalida:'Senha incorreta.',cupom_inexistente:'Cupom não encontrado. Confira o código.',cupom_ja_usado:'Este cupom já foi usado.',cupom_expirado:'Este cupom está vencido.',compra_invalida:'Digite o valor da compra.'};
+try{ $('#senha').value=sessionStorage.getItem('senhaBalcao')||''; }catch(e){}
+$('#senha').addEventListener('change',()=>{ try{ sessionStorage.setItem('senhaBalcao',$('#senha').value); }catch(e){} });
+$('#codigo').addEventListener('input',()=>{ $('#btnUsar').disabled=true; $('#resultado').innerHTML=''; });
+function codigo(){ let c=$('#codigo').value.toUpperCase().replace(/[^A-Z0-9]/g,''); if(c.startsWith('EDU')) c=c.slice(3); return c.length===8?'EDU-'+c.slice(0,4)+'-'+c.slice(4):null; }
+function mostrar(cls,html){ const r=document.createElement('div'); r.className='res '+cls; r.innerHTML=html; $('#resultado').innerHTML=''; $('#resultado').appendChild(r); return r; }
+function erro(e){ const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0); mostrar('ruim','<div class="status"></div>').querySelector('.status').textContent=k?MSG[k]:'Não foi possível consultar agora. Confira a internet.'; }
+let atual=null;
+function centavos(t){ t=String(t||'').replace(/[^0-9,.]/g,''); if(!t) return 0; if(t.indexOf(',')>=0) t=t.replace(/\./g,'').replace(',','.'); const v=Math.round(parseFloat(t)*100); return isFinite(v)&&v>0?v:0; }
+function descontoDe(compra){ return atual&&atual.pct?Math.min(atual.valor_centavos,Math.floor(compra*atual.pct/100)):0; }
+function calcDesconto(){ const c=centavos($('#compra').value), d=descontoDe(c); $('#descCalc').textContent='Desconto: '+reais(d); $('#btnUsar').disabled=!(d>0); }
+$('#btnConsultar').addEventListener('click',async()=>{
+  const c=codigo(), senha=$('#senha').value; $('#btnUsar').disabled=true; atual=null;
+  if(!senha){ mostrar('ruim','<div class="status">Digite a senha do balcão.</div>'); return; }
+  if(!c){ mostrar('ruim','<div class="status">Código incompleto. O formato é EDU-XXXX-XXXX.</div>'); return; }
+  $('#codigo').value=c; $('#btnConsultar').disabled=true;
+  try{
+    const rows=await rpc('consultar_cupom',{p_codigo:c,p_senha:senha})||[];
+    if(!rows.length){ erro(new Error('cupom_inexistente')); return; }
+    const x=rows[0], usado=!!x.usado_em, venc=!usado&&new Date(x.expira_em)<new Date();
+    const r=mostrar(usado||venc?'ruim':'ok','<div class="status"></div><div class="valor"></div><dl><dt>Tipo</dt><dd class="tp"></dd><dt>Jogador</dt><dd class="ap"></dd><dt>Gerado em</dt><dd class="cr"></dd><dt>Validade</dt><dd class="ex"></dd></dl>');
+    r.querySelector('.status').textContent=usado?'✖ Já usado em '+dataHora(x.usado_em):venc?'✖ Vencido':'✔ Cupom válido';
+    r.querySelector('.valor').textContent=reais(x.valor_centavos)+' de desconto';
+    r.querySelector('.tp').textContent=x.tipo==='conclusao'?'🎁 Conclusão das tarefas':'Troca de dinheiro do jogo';
+    r.querySelector('.ap').textContent=x.apelido; r.querySelector('.cr').textContent=dataHora(x.criado_em); r.querySelector('.ex').textContent=dataHora(x.expira_em);
+    if(!usado&&!venc){
+      atual=x; atual.pct=null;
+      try{ const p=await rpc('cupom_percentual',{p_codigo:c,p_senha:senha}); atual.pct=(typeof p==='number')?p:null; }catch(e){ atual.pct=null; atual.semPct=true; }
+      if(atual.pct){
+        r.querySelector('.valor').textContent=atual.pct+'% da compra, até '+reais(x.valor_centavos);
+        const bx=document.createElement('div'); bx.className='compra';
+        bx.innerHTML='<label for="compra">Valor dos produtos não alcoólicos</label><input id="compra" inputmode="decimal" autocomplete="off" placeholder="R$ 0,00"><div class="desc" id="descCalc">Desconto: R$ 0,00</div><p class="pequeno" id="descObs"></p>';
+        r.appendChild(bx);
+        $('#descObs').textContent='O desconto é '+atual.pct+'% da compra, até '+reais(x.valor_centavos)+'. Para usar o valor inteiro, a compra precisa ser de '+reais(Math.ceil(x.valor_centavos*100/atual.pct))+' ou mais. O cupom só pode ser usado uma vez.';
+        $('#compra').addEventListener('input',calcDesconto); setTimeout(()=>$('#compra').focus(),50);
+        $('#btnUsar').disabled=true;
+      } else $('#btnUsar').disabled=false;
+    }
+    try{ sessionStorage.setItem('senhaBalcao',senha); }catch(e){}
+  }catch(e){ erro(e); }
+  finally{ $('#btnConsultar').disabled=false; }
+});
+const nomeMes=m=>{ const [a,mm]=m.split('-'); return ['jan','fev','mar','abr','mai','jun','jul','ago','set','out','nov','dez'][+mm-1]+'/'+a; };
+function el(tag,cls,txt){ const e=document.createElement(tag); if(cls) e.className=cls; if(txt!==undefined) e.textContent=txt; return e; }
+function cartaoNum(rot,val,dest){ const d=el('div','num'+(dest?' dest':'')); d.append(el('b','',val),el('span','',rot)); return d; }
+function tabela(cols,linhas){
+  const w=el('div','rolagem'), t=el('table'), th=el('tr');
+  cols.forEach(c=>{ const x=el('th',c[1]?'n':'',c[0]); th.appendChild(x); }); t.appendChild(th);
+  linhas.forEach(l=>{ const tr=el('tr'); l.forEach((v,i)=>tr.appendChild(el('td',cols[i][1]?'n':'',v))); t.appendChild(tr); });
+  w.appendChild(t); return w;
+}
+async function carregarResumo(){
+  const senha=$('#senha').value, box=$('#resumo');
+  if(!senha){ box.innerHTML='<p class="vazio">Digite a senha do balcão lá em cima.</p>'; return; }
+  $('#btnResumo').disabled=true; box.innerHTML='<p class="vazio">Carregando…</p>';
+  try{
+    const r=await rpc('resumo_cupons',{p_senha:senha});
+    box.innerHTML='';
+    const m=r.mes_atual, g=r.geral;
+    box.appendChild(el('div','sub-tit','Este mês ('+nomeMes(r.mes)+')'));
+    const g1=el('div','grade');
+    g1.append(cartaoNum('cupons gerados',String(m.gerados)),cartaoNum('cupons usados',String(m.usados)),
+      cartaoNum('desconto já dado',reais(m.valor_usado),true),cartaoNum('ainda podem ser usados',String(m.validos)));
+    box.appendChild(g1);
+    box.appendChild(el('div','sub-tit','Desde o início'));
+    const g2=el('div','grade');
+    g2.append(cartaoNum('cupons gerados',String(g.gerados)),cartaoNum('cupons usados',String(g.usados)),
+      cartaoNum('desconto já dado',reais(g.valor_usado),true),cartaoNum('vencidos sem uso',String(g.vencidos)));
+    box.appendChild(g2);
+    box.appendChild(el('div','sub-tit','Por mês'));
+    if(r.por_mes.length) box.appendChild(tabela([['Mês'],['Gerados',1],['Usados',1],['Desconto dado',1]],r.por_mes.map(x=>[nomeMes(x.mes),String(x.gerados),String(x.usados),reais(x.valor_usado)])));
+    else box.appendChild(el('p','vazio','Nenhum cupom gerado ainda.'));
+    box.appendChild(el('div','sub-tit','Quem mais gerou cupons este mês'));
+    if(r.jogadores_mes.length) box.appendChild(tabela([['Jogador'],['Cupons',1],['Usados',1],['Valor',1]],r.jogadores_mes.map(x=>[x.apelido,String(x.cupons),String(x.usados),reais(x.valor)])));
+    else box.appendChild(el('p','vazio','Ninguém gerou cupom este mês.'));
+    box.appendChild(el('div','sub-tit','📅 Validade dos cupons (últimos 60 dias)'));
+    try{
+      const vs=await rpc('cupons_validade',{p_senha:senha})||[];
+      if(vs.length){
+        const dia=d=>new Date(d).toLocaleDateString('pt-BR',{day:'2-digit',month:'2-digit',year:'2-digit'});
+        const sit=x=>{ if(x.situacao==='usado') return '✔ Usado '+dia(x.usado_em)+(x.usado_desconto_centavos?' ('+reais(x.usado_desconto_centavos)+')':'');
+          if(x.situacao==='vencido') return '✖ Vencido';
+          const dias=Math.ceil((new Date(x.expira_em)-new Date())/86400000); return dias<=3?'⚠️ Vence em '+dias+(dias===1?' dia':' dias'):'🟢 Válido'; };
+        const tv=tabela([['Validade'],['Situação'],['Jogador'],['Valor',1],['Código']],vs.map(x=>[dia(x.expira_em),sit(x),x.apelido||'—',(x.percentual?x.percentual+'% até ':'')+reais(x.valor_centavos),x.codigo])); tv.classList.add('val'); box.appendChild(tv);
+      } else box.appendChild(el('p','vazio','Nenhum cupom gerado nos últimos 60 dias.'));
+    }catch(e){ box.appendChild(el('p','vazio',/cupons_validade|404|function/i.test(e.message)?'Para ver a validade, rode o arquivo supabase-cupons-validade.sql no Supabase.':'Não foi possível carregar a validade agora.')); }
+    box.appendChild(el('div','sub-tit','Últimos cupons usados no balcão'));
+    if(r.ultimos_usados.length) box.appendChild(tabela([['Quando'],['Jogador'],['Código'],['Valor',1]],r.ultimos_usados.map(x=>[dataHora(x.usado_em),x.apelido,x.codigo,reais(x.valor)])));
+    else box.appendChild(el('p','vazio','Nenhum cupom usado ainda.'));
+    box.appendChild(el('div','sub-tit','🛵 Entregas por jogador'));
+    try{
+      const en=await rpc('resumo_entregas',{p_senha:senha});
+      const g3=el('div','grade');
+      g3.append(cartaoNum('entregas feitas',String(en.total_feitas),true),cartaoNum('pedidos perdidos',String(en.total_perdidas)));
+      box.appendChild(g3);
+      if(en.jogadores.length) box.appendChild(tabela([['Jogador'],['Feitas',1],['Perdidas',1],['Atualizado',1]],en.jogadores.map(x=>[x.apelido,String(x.feitas),String(x.perdidas),dataHora(x.atualizado_em)])));
+      else box.appendChild(el('p','vazio','Ninguém fez entregas ainda. Elas são liberadas depois de completar todas as tarefas.'));
+    }catch(e){
+      box.appendChild(el('p','vazio',/resumo_entregas/.test(e.message)?'O resumo de entregas ainda não foi instalado no banco. Rode o supabase-resumo-entregas.sql no Supabase.':'Não foi possível carregar as entregas agora.'));
+    }
+    try{ sessionStorage.setItem('senhaBalcao',senha); }catch(e){}
+  }catch(e){
+    box.innerHTML=''; const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0);
+    box.appendChild(el('p','vazio',k?MSG[k]:(/resumo_cupons/.test(e.message)?'O resumo ainda não foi instalado no banco. Rode o supabase-resumo-cupons.sql no Supabase.':'Não foi possível carregar o resumo. Confira a internet.')));
+  }finally{ $('#btnResumo').disabled=false; }
+}
+const tempoAtras=s=>s<60?'agora mesmo':(s<3600?Math.floor(s/60)+' min atrás':Math.floor(s/3600)+' h atrás');
+const numCurto=v=>{ for(const [n,u] of [[1e12,' tri'],[1e9,' bi'],[1e6,' mi']]) if(v>=n) return (v/n).toFixed(1).replace('.',',').replace(/,0$/,'')+u; return v>=1e3?Math.round(v/1e3)+' mil':String(Math.round(v)); };
+async function carregarOnline(){
+  const senha=$('#senha').value, box=$('#online');
+  if(!senha){ box.innerHTML='<p class="vazio">Digite a senha do balcão lá em cima.</p>'; return; }
+  $('#btnOnline').disabled=true;
+  try{
+    const r=await rpc('jogadores_online',{p_senha:senha}); box.innerHTML='';
+    const g=el('div','grade');
+    g.append(cartaoNum('jogando agora',String(r.online.length),true),cartaoNum('vistos nos últimos 30 min',String(r.online.length+r.recentes.length)));
+    box.appendChild(g);
+    if(r.online.length) box.appendChild(tabela([['Jogador'],['Faturamento',1],['Último sinal',1]],r.online.map(x=>['🟢 '+x.apelido,numCurto(x.faturamento),tempoAtras(x.segundos)])));
+    else box.appendChild(el('p','vazio','Ninguém jogando neste momento.'));
+    if(r.recentes.length){ box.appendChild(el('div','sub-tit','Saíram há pouco')); box.appendChild(tabela([['Jogador'],['Último sinal',1]],r.recentes.map(x=>['⚪ '+x.apelido,tempoAtras(x.segundos)]))); }
+    box.appendChild(el('p','vazio','Atualiza sozinho a cada 30 segundos · última atualização às '+new Date().toLocaleTimeString('pt-BR',{hour:'2-digit',minute:'2-digit',second:'2-digit'})+'.'));
+  }catch(e){
+    box.innerHTML=''; const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0);
+    box.appendChild(el('p','vazio',k?MSG[k]:(/jogadores_online/.test(e.message)?'A lista de online ainda não foi instalada no banco. Rode o supabase-online.sql no Supabase.':'Não foi possível carregar agora. Confira a internet.')));
+  }finally{ $('#btnOnline').disabled=false; }
+}
+$('#btnOnline').addEventListener('click',carregarOnline);
+setInterval(()=>{ if($('#senha').value&&document.visibilityState==='visible') carregarOnline(); },30000);
+if($('#senha').value) setTimeout(carregarOnline,500);
+// ---------- Moderação do Papo da Adega ----------
+async function acaoMod(fn,args){
+  try{ await rpc(fn,Object.assign({p_senha:$('#senha').value},args)); await carregarModeracao(); return true; }
+  catch(e){ const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0); alert(k?MSG[k]:(/apelido_nao_encontrado/.test(e.message)?'Apelido não encontrado.':'Não foi possível concluir agora.')); return false; }
+}
+function botao(txt,cls,fn){ const b=el('button',cls,txt); b.type='button'; b.addEventListener('click',fn); return b; }
+async function carregarModeracao(){
+  const senha=$('#senha').value, box=$('#moderacao');
+  if(!senha){ box.innerHTML='<p class="vazio">Digite a senha do balcão lá em cima.</p>'; return; }
+  try{
+    const r=await rpc('mod_listar',{p_senha:senha}); box.innerHTML='';
+    // chat livre: ligar/desligar e horário
+    const on=r.config.chat_livre==='on';
+    const ch=el('div','chave-chat '+(on?'on':'off')); ch.append(el('span','',on?'🗨️ Chat livre: LIGADO':'🗨️ Chat livre: DESLIGADO'),
+      botao(on?'Desligar':'Ligar chat',on?'nao':'ok',()=>{ if(on||confirm('Ligar o chat livre para os jogadores com 8 tarefas ou mais?')) acaoMod('mod_config',{p_chave:'chat_livre',p_valor:on?'off':'on'}); }));
+    box.appendChild(ch);
+    const hr=el('div','mod-linha'); const ini=el('input'); ini.type='number'; ini.min=0; ini.max=24; ini.value=r.config.inicio; const fim=el('input'); fim.type='number'; fim.min=0; fim.max=24; fim.value=r.config.fim;
+    hr.append(el('span','','Horário do chat: das'),ini,el('span','','às'),fim,botao('Salvar horário','',async()=>{ if(await acaoMod('mod_config',{p_chave:'chat_hora_inicio',p_valor:String(ini.value)})) acaoMod('mod_config',{p_chave:'chat_hora_fim',p_valor:String(fim.value)}); }));
+    box.appendChild(hr);
+    // ideias aguardando
+    box.appendChild(el('div','sub-tit','💡 Ideias aguardando aprovação ('+r.ideias.length+')'));
+    if(!r.ideias.length) box.appendChild(el('p','vazio','Nenhuma ideia aguardando.'));
+    r.ideias.forEach(i=>{ const it=el('div','mod-item'); const q=el('div','quem',i.apelido); q.appendChild(el('span','',dataHora(i.criado_em))); it.append(q,el('div','txt',i.texto));
+      const a=el('div','mod-acoes'); a.append(botao('✔ Aprovar','ok',()=>acaoMod('mod_ideia',{p_ideia:i.id,p_acao:'aprovar'})),botao('✖ Recusar','nao',()=>acaoMod('mod_ideia',{p_ideia:i.id,p_acao:'recusar'}))); it.appendChild(a); box.appendChild(it); });
+    // mensagens do chat
+    const ocultas=r.chat.filter(m=>m.oculta).length;
+    box.appendChild(el('div','sub-tit','🗨️ Mensagens do chat'+(ocultas?' · 🚩 '+ocultas+' escondida(s) por denúncia':'')));
+    if(!r.chat.length) box.appendChild(el('p','vazio','Nenhuma mensagem no chat.'));
+    r.chat.forEach(m=>{ const it=el('div','mod-item'+(m.oculta?' alerta':'')); const q=el('div','quem',(m.oculta?'🚩 ':'')+m.apelido); q.appendChild(el('span','',dataHora(m.criado_em)+(m.denuncias?' · '+m.denuncias+' denúncia(s)':''))); it.append(q,el('div','txt',m.texto));
+      const a=el('div','mod-acoes'); if(m.oculta||m.denuncias) a.appendChild(botao('↩ Restaurar','ok',()=>acaoMod('mod_chat',{p_msg:m.id,p_acao:'restaurar'})));
+      a.appendChild(botao('🗑 Apagar','nao',()=>{ if(confirm('Apagar esta mensagem?')) acaoMod('mod_chat',{p_msg:m.id,p_acao:'apagar'}); }));
+      a.appendChild(botao('🔇 Silenciar '+m.apelido,'',()=>{ const d=prompt('Silenciar '+m.apelido+' por quantos dias? (0 = remover, 9999 = para sempre)','7'); if(d!==null) acaoMod('mod_silenciar',{p_apelido:m.apelido,p_dias:parseInt(d,10)||0}); }));
+      it.appendChild(a); box.appendChild(it); });
+    // silenciar
+    box.appendChild(el('div','sub-tit','🔇 Silenciar jogador'));
+    const sl=el('div','mod-linha'); const ap=el('input'); ap.placeholder='Apelido'; const sel=el('select');
+    [['1','1 dia'],['7','7 dias'],['30','30 dias'],['9999','Para sempre'],['0','Remover silêncio']].forEach(o=>{ const op=el('option','',o[1]); op.value=o[0]; sel.appendChild(op); });
+    sl.append(ap,sel,botao('Aplicar','nao',()=>{ if(ap.value.trim()) acaoMod('mod_silenciar',{p_apelido:ap.value.trim(),p_dias:parseInt(sel.value,10)}); }));
+    box.appendChild(sl);
+    if(r.silenciados.length){ box.appendChild(tabela([['Silenciado'],['Até',1],['']],r.silenciados.map(x=>[x.apelido,/infinity/i.test(String(x.ate))||new Date(x.ate).getFullYear()>9000?'para sempre':dataHora(x.ate),'']))); 
+      box.lastChild.querySelectorAll('tr').forEach((tr,k)=>{ if(k===0) return; const td=tr.lastChild; td.appendChild(botao('Remover','',()=>acaoMod('mod_silenciar',{p_apelido:r.silenciados[k-1].apelido,p_dias:0}))); }); }
+  }catch(e){
+    box.innerHTML=''; const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0);
+    box.appendChild(el('p','vazio',k?MSG[k]:(/mod_listar/.test(e.message)?'A moderação ainda não foi instalada no banco. Rode o supabase-papo.sql no Supabase.':'Não foi possível carregar agora. Confira a internet.')));
+  }
+}
+// ---------- Segurança: suspeitas e bloqueio de cupons ----------
+async function carregarSeguranca(){
+  const senha=$('#senha').value, box=$('#seguranca');
+  if(!senha){ box.innerHTML='<p class="vazio">Digite a senha do balcão lá em cima.</p>'; return; }
+  try{
+    const r=await rpc('seg_listar',{p_senha:senha}); box.innerHTML='';
+    box.appendChild(el('p','vazio','O banco corta faturamento impossível e registra a tentativa. Cupons exigem conta com 1 dia e 2 horas de jogo.'));
+    box.appendChild(el('div','sub-tit','Jogadores com suspeita ou bloqueio'));
+    if(!r.jogadores.length) box.appendChild(el('p','vazio','Nenhuma suspeita até agora. 👍'));
+    r.jogadores.forEach(j=>{ const it=el('div','mod-item'+(j.bloqueado||j.suspeitas>=3?' alerta':'')); const q=el('div','quem',(j.bloqueado?'🔒 ':'')+j.apelido); q.appendChild(el('span','',j.suspeitas+' suspeita(s) · '+String(j.horas).replace('.',',')+' h de jogo'));
+      it.append(q,el('div','txt','Faturamento aceito: '+numCurto(Number(j.faturamento))));
+      const a=el('div','mod-acoes'); a.appendChild(j.bloqueado?botao('🔓 Desbloquear cupons','ok',()=>acaoSeg(j.apelido,false)):botao('🔒 Bloquear cupons','nao',()=>{ if(confirm('Bloquear os cupons de '+j.apelido+'?')) acaoSeg(j.apelido,true); }));
+      it.appendChild(a); box.appendChild(it); });
+    box.appendChild(el('div','sub-tit','Bloquear cupons de um apelido'));
+    const sl=el('div','mod-linha'); const ap=el('input'); ap.placeholder='Apelido';
+    sl.append(ap,botao('Bloquear','nao',()=>{ if(ap.value.trim()) acaoSeg(ap.value.trim(),true); }),botao('Desbloquear','ok',()=>{ if(ap.value.trim()) acaoSeg(ap.value.trim(),false); }));
+    box.appendChild(sl);
+    if(r.eventos.length){ box.appendChild(el('div','sub-tit','Últimas tentativas cortadas'));
+      box.appendChild(tabela([['Quando'],['Jogador'],['Tentou',1],['Aceito',1]],r.eventos.map(e=>[dataHora(e.criado_em),e.apelido,numCurto(Number(e.enviado)),numCurto(Number(e.aceito))]))); }
+  }catch(e){
+    box.innerHTML=''; const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0);
+    box.appendChild(el('p','vazio',k?MSG[k]:(/seg_listar/.test(e.message)?'A proteção ainda não foi instalada no banco. Rode o supabase-antifraude.sql no Supabase.':'Não foi possível carregar agora. Confira a internet.')));
+  }
+}
+async function acaoSeg(apelido,bloquear){
+  try{ await rpc('seg_bloquear',{p_senha:$('#senha').value,p_apelido:apelido,p_bloquear:bloquear}); await carregarSeguranca(); }
+  catch(e){ alert(/apelido_nao_encontrado/.test(e.message)?'Apelido não encontrado.':'Não foi possível concluir agora.'); }
+}
+// ---------- Progresso dos jogadores ----------
+const horasTxt=h=>String(h).replace('.',',')+' h';
+async function carregarProgresso(){
+  const senha=$('#senha').value, box=$('#progresso');
+  if(!senha){ box.innerHTML='<p class="vazio">Digite a senha do balcão lá em cima.</p>'; return; }
+  try{
+    const r=await rpc('progresso_jogadores',{p_senha:senha}), R=r.resumo; box.innerHTML='';
+    const g=el('div','grade');
+    g.append(cartaoNum('jogadores com progresso salvo',String(R.jogadores)),cartaoNum('horas de jogo, em média',horasTxt(R.media_horas),true),
+             cartaoNum('completaram as 16 tarefas',String(R.tarefas_completas)),cartaoNum('todos os setores no nível 40',String(R.nivel40)));
+    box.appendChild(g);
+    box.appendChild(el('p','vazio','Venda da Adega (todos no nível 100): '+R.nivel100+' jogador(es). O tempo de jogo é medido pelo banco desde a instalação da proteção anti-fraude.'));
+    box.appendChild(el('div','sub-tit','Jogadores, do mais ativo ao menos ativo'));
+    if(!r.lista.length) box.appendChild(el('p','vazio','Nenhum jogador com progresso salvo ainda.'));
+    else box.appendChild(tabela([['Jogador'],['Jogo',1],['Setores',1],['Tarefas',1],['Nível',1]],
+      r.lista.map(j=>[(j.falido?'📉 ':'')+j.apelido+(j.adega>1?' · adega nº '+j.adega:''),horasTxt(j.horas),j.setores+(j.setores===1?' aberto':' abertos')+' · nv '+(j.menor??'-')+(j.maior!==j.menor?'–'+j.maior:''),j.tarefas+'/16','⭐ '+j.nivel_jogador])));
+  }catch(e){
+    box.innerHTML=''; const k=Object.keys(MSG).find(x=>e.message.indexOf(x)>=0);
+    box.appendChild(el('p','vazio',k?MSG[k]:(/progresso_jogadores/.test(e.message)?'Esta consulta ainda não foi instalada no banco. Rode o supabase-progresso-jogadores.sql no Supabase.':'Não foi possível carregar agora. Confira a internet.')));
+  }
+}
+$('#btnCodSenha').addEventListener('click',async()=>{
+  const box=$('#resCodSenha'), ap=$('#apelidoSenha').value.trim(), b=$('#btnCodSenha');
+  box.innerHTML='';
+  if(!$('#senha').value){ box.appendChild(el('p','vazio','Digite a senha do balcão lá em cima.')); return; }
+  if(ap.length<2){ box.appendChild(el('p','vazio','Digite o apelido do jogador.')); return; }
+  b.disabled=true;
+  try{
+    const x=await rpc('balcao_codigo_senha',{p_senha:$('#senha').value,p_apelido:ap});
+    const r=el('div','res ok'); r.append(el('div','status','Código para '+x.apelido),el('div','cod-grande',String(x.codigo).replace(/(\d{3})(\d{3})/,'$1 $2')),
+      el('p','','No jogo: tela de entrar → “Esqueci minha senha” → “Tenho um código do balcão”. Vale por 24 horas.'+(x.celular?' Esse jogador também tem WhatsApp confirmado ('+x.celular+') e pode recuperar sozinho.':'')));
+    box.appendChild(r);
+  }catch(e){
+    const m={senha_invalida:'Senha do balcão incorreta.',apelido_nao_encontrado:'Não existe jogador com esse apelido. Confira a escrita.'};
+    const k=Object.keys(m).find(c=>e.message.indexOf(c)>=0);
+    box.appendChild(el('p','vazio',k?m[k]:(/balcao_codigo_senha/.test(e.message)?'Esta função ainda não foi instalada. Rode o supabase-senha-whatsapp.sql no Supabase.':'Não foi possível gerar agora. Confira a internet.')));
+  }finally{ b.disabled=false; }
+});
+$('#btnProgresso').addEventListener('click',carregarProgresso);
+if($('#senha').value) setTimeout(carregarProgresso,650);
+$('#btnSeguranca').addEventListener('click',carregarSeguranca);
+if($('#senha').value) setTimeout(carregarSeguranca,600);
+$('#btnModeracao').addEventListener('click',carregarModeracao);
+if($('#senha').value) setTimeout(carregarModeracao,700);
+$('#btnResumo').addEventListener('click',carregarResumo);
+if($('#senha').value) setTimeout(carregarResumo,300);
+$('#btnUsar').addEventListener('click',async()=>{
+  if(!atual) return;
+  if(atual.pct){
+    const compra=centavos($('#compra')&&$('#compra').value), d=descontoDe(compra);
+    if(!(d>0)){ $('#descCalc').textContent='Digite o valor da compra.'; return; }
+    if(!confirm(`Dar baixa no cupom ${atual.codigo} (${atual.apelido})?\nCompra: ${reais(compra)}\nDesconto: ${reais(d)}\nDepois disso ele não pode ser usado de novo.`)) return;
+    $('#btnUsar').disabled=true;
+    try{
+      const x=await rpc('usar_cupom_compra',{p_codigo:atual.codigo,p_senha:$('#senha').value,p_compra_centavos:compra});
+      const r=mostrar('ok','<div class="status"></div><div class="valor"></div><p></p>');
+      r.querySelector('.status').textContent='✔ Baixa feita';
+      r.querySelector('.valor').textContent='Desconte '+reais(x.desconto_centavos);
+      r.querySelector('p').textContent=`Cupom ${x.codigo} de ${x.apelido} usado em ${dataHora(x.usado_em)}, numa compra de ${reais(x.compra_centavos)} em produtos não alcoólicos.`;
+      atual=null; $('#codigo').value=''; carregarResumo();
+    }catch(e){ erro(e); }
+    return;
+  }
+  if(!confirm(`Dar baixa no cupom ${atual.codigo} de ${reais(atual.valor_centavos)} (${atual.apelido})? Depois disso ele não pode ser usado de novo.`)) return;
+  $('#btnUsar').disabled=true;
+  try{
+    const rows=await rpc('usar_cupom',{p_codigo:atual.codigo,p_senha:$('#senha').value})||[]; const x=rows[0];
+    const r=mostrar('ok','<div class="status"></div><div class="valor"></div><p></p>');
+    r.querySelector('.status').textContent='✔ Baixa feita';
+    r.querySelector('.valor').textContent='Desconte '+reais(x.valor_centavos);
+    r.querySelector('p').textContent=`Cupom ${x.codigo} de ${x.apelido} usado em ${dataHora(x.usado_em)}. Aplique o desconto em produtos não alcoólicos.`;
+    atual=null; $('#codigo').value=''; carregarResumo();
+  }catch(e){ erro(e); }
+});
+})();
+</script>
+</body>
+</html>
