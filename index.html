@@ -31,6 +31,9 @@ body{background:var(--bg);color:var(--text);overflow:hidden;font-family:"Baloo 2
 #lives{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(100px + env(safe-area-inset-top,0px));pointer-events:none;
   font-weight:800;font-size:20px;display:flex;align-items:center;gap:6px}
 #frz{position:fixed;top:calc(52px + env(safe-area-inset-top,0px));left:50%;transform:translateX(-50%);font-weight:800;font-size:22px;color:#8fd3ff;pointer-events:none;z-index:6}
+#keysHud{position:fixed;left:calc(14px + env(safe-area-inset-left,0px));top:calc(164px + env(safe-area-inset-top,0px));display:flex;gap:6px;pointer-events:none}
+#keysHud i{display:block;width:26px;height:18px;border-radius:3px;box-shadow:0 0 0 2px var(--ink);background-image:repeating-linear-gradient(90deg,rgba(255,255,255,.85) 0 2px,transparent 2px 4px);background-size:60% 50%;background-repeat:no-repeat;background-position:center}
+#hTime.warnT{color:#ff4d5e}
 #lives.low{top:calc(128px + env(safe-area-inset-top,0px))}
 #lives i{display:inline-block;width:22px;height:18px;border-radius:11px 11px 4px 4px;background:#d7263d;box-shadow:inset -6px -3px 0 #8a1424,0 0 0 2px var(--ink)}
 #seloHud{position:fixed;top:calc(12px + env(safe-area-inset-top,0px));right:calc(110px + env(safe-area-inset-right,0px));width:30px;height:30px;border-radius:50%;
@@ -144,11 +147,12 @@ a.btn{text-decoration:none}
 
 <div id="hud" class="out hidden">
   <span class="k">Pontos</span><span class="v" id="hScore">0</span>
-  <span class="k">Tempo</span><span class="v" id="hTime">0:00</span>
+  <span class="k" id="hTimeK">Tempo</span><span class="v" id="hTime">0:00</span>
   <span class="k" id="hRingK">Moedas</span><span class="v" id="hRings">0</span>
   <span class="k hidden" id="hGoldK">Selos</span><span class="v hidden" id="hGold">0/3</span>
 </div>
 <div id="frz" class="out hidden"></div>
+<div id="keysHud" class="hidden" title="Guias"></div>
 <div id="lives" class="out hidden"><i></i><span id="hLives">×3</span></div>
 <div id="seloHud" class="hidden" title="Documento"></div>
 <div id="bossHud" class="out hidden"><span id="bossName">Dr. Carimbo</span><span id="bossPips"></span></div>
@@ -291,6 +295,8 @@ const SONGS = {
   6: { bpm: 108, root: 60, lead: [0,null,7,null,12,null,11,null, 9,null,7,null,5,null,4,null, 2,null,7,null,11,null,9,null, 7,null,null,null,null,null,null,null], bass: [0,null,null,null,-5,null,null,null, -3,null,null,null,-7,null,null,null] },
   7: { bpm: 126, root: 62, lw: 'triangle', lv: 0.06, lead: [0,null,3,5,7,null,5,3, 2,null,null,null,7,null,10,null, 8,null,7,5,3,null,5,7, 3,null,2,null,0,null,null,null], bass: [0,null,7,null,0,null,7,null, -2,null,5,null,-2,null,5,null], hat: true },
   8: { bpm: 132, root: 57, lead: [0,null,0,7,null,7,5,null, 3,null,3,5,null,7,null,null, 0,null,0,7,null,10,8,null, 7,null,5,3,2,null,null,null], bass: [0,0,null,0,0,null,0,null, -2,-2,null,-2,-2,null,-2,null], hat: true, kick: true },
+  9: { bpm: 118, root: 64, lw: 'triangle', lv: 0.06, lead: [0,null,3,null,7,null,3,null, 8,null,7,null,3,null,2,null, 0,null,3,null,7,null,10,null, 8,7,5,3,2,null,null,null], bass: [0,null,null,0,-5,null,null,-5, -4,null,null,-4,-5,null,null,-5], hat: true },
+  10: { bpm: 126, root: 62, lead: [0,null,4,7,null,4,9,null, 7,null,4,2,null,0,null,null, 0,null,4,7,null,9,12,null, 11,null,9,7,4,null,null,null], bass: [0,null,0,null,-3,null,-3,null, -5,null,-5,null,-7,null,-5,null], hat: true, kick: true },
   chefe: { bpm: 160, root: 57, lead: [0,null,3,null,7,null,6,null, 5,null,3,null,1,null,0,null, 0,null,3,null,7,null,10,null, 8,7,5,3,1,null,null,null], bass: [0,0,0,0,0,0,0,0, -4,-4,-4,-4,-2,-2,-2,-2], hat: true, kick: true }
 };
 const MUS = { name: null, step: 0, next: 0, gain: null, noise: null, iv: null };
@@ -378,11 +384,12 @@ stick.addEventListener('pointerup', stickUp); stick.addEventListener('pointercan
 function readInput(){ inp.l = keys.l || touchHeld.l ? 1 : 0; inp.r = keys.r || touchHeld.r ? 1 : 0; inp.j = keys.j || touchHeld.j ? 1 : 0; inp.d = keys.d || touchHeld.d ? 1 : 0; }
 
 /* ---------- Fase (lógica) ---------- */
-let crushers = [], hints = [], pwalls = [], drops = [], shots = [], golds = [], clocks = [], gearsDeco = [];
+let crushers = [], hints = [], pwalls = [], drops = [], shots = [], golds = [], clocks = [], gearsDeco = [], guias = [], cascades = [], hourglasses = [], gates = [];
+const KEYCOL = { vermelha: 0xd7263d, azul: 0x2e6bd0, verde: 0x2e9a5a }, KEYCSS = { vermelha: '#d7263d', azul: '#2e6bd0', verde: '#2e9a5a' };
 let grid, rings, boxes, enemies, springs, cones, checks, plats, loose, pads, belts, buttons, doors, cubes, vents, spawners, rollers, selo, goal, boss, npc, LV;
-const BUILT = 24;
-const DOCNAME = { 1: 'CNPJ', 2: 'Alvará', 3: 'Vistoria dos Bombeiros', 4: 'Licença Sanitária', 5: 'Inscrição Estadual', 6: 'Certidão Negativa', 7: 'Contrato Social', 8: 'Registro do Funcionário' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2', 3: 'motoca-doc3', 4: 'motoca-doc4', 5: 'motoca-doc5', 6: 'motoca-doc6', 7: 'motoca-doc7', 8: 'motoca-doc8' };
-const DOCPOP = { 1: 'CNPJ conquistado!', 2: 'Alvará conquistado!', 3: 'Vistoria dos Bombeiros conquistada!', 4: 'Licença Sanitária conquistada!', 5: 'Inscrição Estadual conquistada!', 6: 'Certidão Negativa conquistada!', 7: 'Contrato Social conquistado!', 8: 'Registro do Funcionário conquistado!' };
+const BUILT = 30;
+const DOCNAME = { 1: 'CNPJ', 2: 'Alvará', 3: 'Vistoria dos Bombeiros', 4: 'Licença Sanitária', 5: 'Inscrição Estadual', 6: 'Certidão Negativa', 7: 'Contrato Social', 8: 'Registro do Funcionário', 9: 'Nota Fiscal', 10: 'Licença de Importação' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2', 3: 'motoca-doc3', 4: 'motoca-doc4', 5: 'motoca-doc5', 6: 'motoca-doc6', 7: 'motoca-doc7', 8: 'motoca-doc8', 9: 'motoca-doc9', 10: 'motoca-doc10' };
+const DOCPOP = { 1: 'CNPJ conquistado!', 2: 'Alvará conquistado!', 3: 'Vistoria dos Bombeiros conquistada!', 4: 'Licença Sanitária conquistada!', 5: 'Inscrição Estadual conquistada!', 6: 'Certidão Negativa conquistada!', 7: 'Contrato Social conquistado!', 8: 'Registro do Funcionário conquistado!', 9: 'Nota Fiscal conquistada!', 10: 'Licença de Importação conquistada!' };
 const ACTS = {
   1: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 1', sky:'day', facade:{ x:245.5, kind:'adega' }, sign:true },
   2: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 2', sky:'sunset', facade:null },
@@ -407,12 +414,18 @@ const ACTS = {
   21: { zone:7, season:2, theme:'cartorio', name:'Cartório das Firmas', sub:'Zona 7 · Ato 3', sky:'cartorio', facade:null, bossSign:true },
   22: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 1', sky:'fabrica', facade:null, tip:'ponto' },
   23: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 2 · Perseguição', sky:'fabrica', facade:null, tip:'prazo' },
-  24: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 3', sky:'fabrica', facade:null, bossSign:true }
+  24: { zone:8, season:2, theme:'fabrica', name:'Fábrica da Folha', sub:'Zona 8 · Ato 3', sky:'fabrica', facade:null, bossSign:true },
+  25: { zone:9, season:2, theme:'labirinto', name:'Labirinto Tributário', sub:'Zona 9 · Ato 1', sky:'labirinto', facade:null, tip:'guias' },
+  26: { zone:9, season:2, theme:'labirinto', name:'Labirinto Tributário', sub:'Zona 9 · Ato 2 · Prazo final', sky:'labirinto', facade:null, tip:'prazoFinal' },
+  27: { zone:9, season:2, theme:'labirinto', name:'Labirinto Tributário', sub:'Zona 9 · Ato 3', sky:'labirinto', facade:null, bossSign:true },
+  28: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 1', sky:'porto', facade:null, tip:'cancela' },
+  29: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 2 · Canal vermelho', sky:'porto', facade:null, tip:'canalVermelho' },
+  30: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 3', sky:'porto', facade:null, bossSign:true }
 };
 function newGrid(cols, top=0){
   COLS = cols; TOPX = top; grid = Array.from({ length: ROWS }, () => Array(COLS).fill('.'));
   for (let r = -TOPX; r < 0; r++) grid[r] = Array(COLS).fill('.');
-  pwalls = []; drops = []; shots = []; golds = []; clocks = []; gearsDeco = [];
+  pwalls = []; drops = []; shots = []; golds = []; clocks = []; gearsDeco = []; guias = []; cascades = []; hourglasses = []; gates = [];
   rings = []; boxes = []; enemies = []; springs = []; cones = []; checks = []; plats = []; loose = []; pads = []; belts = []; buttons = []; doors = []; cubes = []; vents = []; spawners = []; rollers = []; crushers = []; hints = [];
   selo = null; goal = null; boss = null; npc = null;
 }
@@ -444,6 +457,13 @@ const pwall = (tx, ty0=8, ty1=13) => { pwalls.push({ tx, ty0, ty1, alive: true }
 const drop = (tx, h=1, near=110) => drops.push({ tx, x: tx * T + 8, h, near, state: 'wait', t: 0, y: 0, vy: 0, land: 0 });
 const gold = (tx, ty) => golds.push({ x: tx * T + 8, y: ty * T + 8, got: false, had: false });
 const clock = (tx, ty=13) => clocks.push({ x: tx * T + 8, y: ty * T, cd: 0 });
+const guia = (tx, ty, color) => guias.push({ x: tx * T + 8, y: ty * T + 8, color, got: false });
+const keyDoor = (tx, color, ty0=0, ty1=13) => { door(tx, 'k-' + color + '-' + tx, ty0, ty1); doors[doors.length - 1].key = color; };
+const cascade = (tx, ty0, ty1, period=170, on=70, ph=0) => cascades.push({ x: tx * T + 8, ty0, ty1, period, on, ph, active: false, warn: false });
+const gate = (tx, ty0, ty1, period=200, open=120, ph=0) => gates.push({ tx, ty0, ty1, period, open, ph, closed: false, warn: false, lift: 1 });
+const crane = (tx, ty, range, speed=0.02) => { plat(tx, ty, range, speed); plats[plats.length - 1].crane = true; };
+const craneLift = (tx, ty, range, speed=0.025) => { elevator(tx, ty, range, speed); plats[plats.length - 1].crane = true; };
+const hourglass = (tx, ty) => hourglasses.push({ x: tx * T + 8, y: ty * T + 8, got: false });
 const gearWheel = (tx, ty, r, n=4, sp=0.015) => { const cx = tx * T + 8, cy = ty * T; gearsDeco.push({ x: cx, y: cy, r: r * T, n, first: plats.length });
   for (let i = 0; i < n; i++) { const ph = i * Math.PI * 2 / n; plats.push({ axis: 'c', cx, cy, range: r * T, ph, sp, t: 0, w: 48, x: cx + Math.cos(ph) * r * T - 24, y: cy + Math.sin(ph) * r * T, x0: 0, dx: 0, dy: 0 }); } };
 
@@ -1043,6 +1063,137 @@ function level24(){
   blocks(72, 76, 0, 13);
   boss = { kind:'maquina', a0:56, a1:72, x:(72 - 5) * T + 8, y:13 * T - 320, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, print:0 };
 }
+/* ---------- Temporada 2 · Zona 9: Labirinto Tributário ---------- */
+function level25(){
+  newGrid(250, 10);
+  ground(0, 250);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: no labirinto dos impostos, cada porta pede uma guia diferente!' };
+  // lajes: andar 1 (linha 6) e andar 2 (linha -1)
+  blocks(18, 104, 6, 7); awning(40, 44, 6); for (let x = 70; x < 74; x++) setT(x, 6, '.');
+  blocks(104, 106, -10, 7);
+  blocks(34, 96, -1, 0); awning(52, 56, -1); awning(52, 56, 2);
+  // térreo 1
+  ringLine(4, 5, 12); enemy('escrevente', 26, 3); spring(42); cascade(60, 7, 13, 170, 70, 0); enemy('cachorro', 64, 2); ringLine(75, 8, 12);
+  keyDoor(88, 'vermelha', 7, 13);
+  // andar 1
+  ringLine(45, 6, 5); enemy('carimbador', 64, 0, 6); enemy('pombo', 84, 3, 6);
+  // andar 2
+  guia(80, -2, 'vermelha'); ringLine(62, 10, -2); enemy('escrevente', 70, 4, -1);
+  selo = { x: 36 * T + 8, y: -1 * T - 22, got: false };
+  blocks(57, 58, -9, -3); blocks(60, 61, -9, -3); gold(58, -10); ringCol(58, 4, -4);
+  // térreo 2
+  checkpoint(92); ringLine(94, 6, 12);
+  cascade(112, 7, 13, 160, 60, 0); cascade(120, 7, 13, 160, 60, 55); cascade(128, 7, 13, 160, 60, 110); guia(124, 11, 'azul'); gold(120, 12);
+  enemy('cachorro', 136, 2);
+  blocks(150, 152, 7, 13);
+  blocks(106, 206, 6, 7); for (let x = 140; x < 144; x++) setT(x, 6, '.'); elevator(141, 8, 5, 0.025);
+  // andar 1, trecho 2
+  checkpoint(147, 6);
+  enemy('escrevente', 160, 4, 6); keyDoor(170, 'azul', 0, 6); enemy('carimbador', 186, 0, 6); ringLine(172, 8, 5);
+  for (let x = 196; x < 200; x++) setT(x, 6, '.');
+  // térreo final
+  ringLine(200, 6, 12); enemy('pombo', 214, 3); cone(220);
+  blocks(222, 226, 3, 4); gold(224, 2);
+  goal = { x: 236 * T + 8, y: 13 * T, done: false };
+  blocks(246, 250, 0, 13);
+}
+function level26(){
+  newGrid(290, 6);
+  LV.countdown = 75;
+  ground(0, 290);
+  npc = { x: 8 * T + 8, y: 13 * T, said: false, text: 'Zé: o prazo da nota fiscal vence já! Pegue as ampulhetas para ganhar tempo.' };
+  ringLine(4, 5, 12); cascade(22, 4, 13, 150, 60, 0); hourglass(30, 11); enemy('escrevente', 38, 3);
+  belt(44, 56, 1); cascade(50, 4, 13, 140, 55, 30); ringLine(44, 10, 12);
+  checkpoint(62);
+  // bifurcação: em cima (rápido, perigoso) e embaixo (longo, com ampulhetas)
+  spring(65); blocks(68, 150, 5, 6); for (const [a, b2] of [[86, 90], [110, 114], [132, 136]]) for (let x = a; x < b2; x++) setT(x, 5, '.');
+  cascade(78, -4, 5, 130, 55, 0); cascade(100, -4, 5, 130, 55, 40); cascade(122, -4, 5, 130, 55, 80); ringLine(70, 14, 4, 2); enemy('carimbador', 146, 0, 5); gold(148, 3);
+  belt(72, 96, -1); hourglass(80, 12); enemy('cachorro', 100, 2); blocks(104, 106, 10, 13); hourglass(118, 9); enemy('pombo', 126, 3); belt(130, 146, -1); hourglass(140, 12); ringLine(108, 8, 12);
+  checkpoint(156);
+  enemy('escrevente', 166, 4); blocks(176, 177, 2, 11); blocks(179, 180, 2, 11); gold(177, 1); ringCol(177, 4, 10);
+  cascade(186, 4, 13, 150, 60, 20); enemy('cachorro', 190, 2);
+  spring(194); blocks(198, 214, 5, 6); guia(212, 4, 'verde'); cascade(206, -4, 5, 140, 55, 60); ringLine(200, 6, 4);
+  blocks(225, 228, 4, 5); gold(226, 3);
+  keyDoor(232, 'verde', -6, 13);
+  hourglass(238, 12); ringLine(240, 8, 12); enemy('escrevente', 254, 3); cascade(262, 4, 13, 150, 60, 0);
+  goal = { x: 272 * T + 8, y: 13 * T, done: false };
+  blocks(286, 290, -6, 13);
+}
+function level27(){
+  newGrid(76);
+  ground(0, 76); ringLine(4, 5, 12);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: a Calculadora Tributária não para de somar imposto! Espere ela calcular e pule em cima!' };
+  cascade(18, 4, 13, 150, 60, 0); gold(18, 12); guia(24, 12, 'vermelha'); keyDoor(30, 'vermelha', 0, 13);
+  spring(36); gold(36, 2); cascade(40, 4, 13, 150, 60, 75); enemy('escrevente', 44, 3);
+  box(48, 12, 'shield'); checkpoint(51); ringLine(52, 3, 12);
+  gold(64, 4);
+  blocks(72, 76, 0, 13);
+  boss = { kind:'calc', a0:56, a1:72, x:(72 - 4) * T + 8, y:13 * T - 320, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, cols:[], arm:0 };
+}
+/* ---------- Temporada 2 · Zona 10: Porto da Importação ---------- */
+function level28(){
+  newGrid(300, 4);
+  ground(0, 38);
+  npc = { x: 8 * T + 8, y: 13 * T, said: false, text: 'Zé: a Adega vai importar uma cerveja artesanal! Mas antes a carga tem que passar pela alfândega...' };
+  ringLine(4, 5, 12); blocks(16, 19, 10, 13); ringLine(16, 3, 9); enemy('carrinho', 26, 4); blocks(32, 35, 9, 13); ringLine(32, 3, 8);
+  crane(42, 11, 3.5, 0.02); ringLine(41, 8, 9);
+  ground(52, 97);
+  checkpoint(55);
+  blocks(60, 72, -4, 9); gate(64, 9, 13, 220, 130, 0); cascade(68, 9, 13, 160, 60, 0); ringLine(61, 10, 12);
+  enemy('pombo', 80, 3);
+  blocks(86, 89, 10, 13); blocks(90, 93, 7, 13); blocks(94, 97, 4, 13); ringLine(90, 3, 6); ringLine(94, 3, 3);
+  crane(100, 4, 2.5, 0.022); gold(103, 0);
+  blocks(108, 111, 4, 13); ringLine(108, 3, 3);
+  ground(112, 300);
+  checkpoint(116);
+  blocks(124, 146, -4, 9); gate(128, 9, 13, 200, 120, 0); cascade(134, 9, 13, 150, 60, 30); gate(140, 9, 13, 200, 120, 100); ringLine(125, 20, 12);
+  box(150, 12, 'rings'); enemy('carrinho', 156, 4);
+  spring(161); blocks(164, 177, 4, 5); ringLine(165, 8, 3); enemy('escrevente', 170, 3, 4);
+  crane(180, 4, 2.5, 0.02); blocks(187, 191, 4, 5); selo = { x: 189 * T + 8, y: 4 * T - 22, got: false }; gold(194, 0);
+  checkpoint(198);
+  blocks(210, 211, 4, 11); blocks(213, 214, 4, 11); gold(212, 3); ringCol(212, 4, 10);
+  enemy('cachorro', 220, 2);
+  blocks(226, 244, -4, 9); gate(230, 9, 13, 180, 100, 0); cascade(236, 9, 13, 140, 55, 0); gate(241, 9, 13, 180, 100, 60); ringLine(227, 16, 12);
+  enemy('pombo', 252, 3); enemy('carrinho', 262, 4); ringLine(266, 6, 12);
+  goal = { x: 280 * T + 8, y: 13 * T, done: false };
+  blocks(296, 300, -4, 13);
+}
+function level29(){
+  newGrid(290, 4);
+  ground(0, 52);
+  npc = { x: 7 * T + 8, y: 13 * T, said: false, text: 'Zé: caiu no canal vermelho! Agora vão conferir a carga inteira, caixa por caixa...' };
+  ringLine(4, 4, 12);
+  belt(12, 44, 1); cascade(18, 6, 13, 150, 60, 0); cascade(26, 6, 13, 150, 60, 50); cascade(34, 6, 13, 150, 60, 100); ringLine(14, 26, 12, 2);
+  blocks(46, 48, 11, 13); enemy('carimbador', 50, 0);
+  crane(55, 11, 2.5, 0.025); crane(64, 10, 2.5, 0.031); crane(73, 11, 2.5, 0.022); ringLine(54, 26, 8); gold(64, 5);
+  ground(84, 160);
+  checkpoint(88);
+  blocks(96, 112, -4, 9); gate(99, 9, 13, 170, 95, 0); gate(105, 9, 13, 170, 95, 40); cascade(109, 9, 13, 120, 50, 0); ringLine(97, 14, 12);
+  enemy('cachorro', 118, 3);
+  blocks(124, 132, 3, 13); craneLift(121, 7, 5, 0.025); ringCol(122, 5, 8); gold(128, 0);
+  belt(132, 152, -1); cascade(138, 4, 13, 140, 55, 0); cascade(146, 4, 13, 140, 55, 70); enemy('escrevente', 142, 3); ringLine(134, 16, 12);
+  ground(166, 290);
+  crane(160, 11, 2, 0.03);
+  checkpoint(170);
+  blocks(178, 200, -4, 9); gate(182, 9, 13, 160, 90, 0); cascade(187, 9, 13, 130, 50, 20); gate(192, 9, 13, 160, 90, 50); cascade(196, 9, 13, 130, 50, 80); ringLine(179, 20, 12);
+  enemy('carrinho', 208, 4); enemy('pombo', 214, 3);
+  blocks(220, 223, 10, 13); blocks(226, 229, 7, 13); crane(233, 7, 2, 0.026); blocks(240, 243, 7, 13); gold(242, 3);
+  belt(246, 262, 1); cascade(252, 6, 13, 140, 55, 0); cascade(258, 6, 13, 140, 55, 60);
+  ringLine(264, 6, 12);
+  goal = { x: 274 * T + 8, y: 13 * T, done: false };
+  blocks(286, 290, -4, 13);
+}
+function level30(){
+  newGrid(76, 4);
+  ground(0, 76); ringLine(4, 5, 12);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: o Guindaste da Alfândega segurou a nossa carga! Quando a garra ficar presa no chão, pule em cima!' };
+  gate(18, 9, 13, 200, 120, 0); blocks(14, 22, -4, 9); cascade(26, 6, 13, 150, 60, 0); gold(26, 5);
+  crane(31, 11, 2, 0.025); gold(36, 7); enemy('carrinho', 42, 3);
+  box(48, 12, 'shield'); checkpoint(51); ringLine(52, 3, 12);
+  gold(64, 4);
+  blocks(72, 76, -4, 13);
+  boss = { kind:'crane', a0:56, a1:72, x:64 * T + 8, y:13 * T - 330, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, cd:60, tx:0 };
+}
 function rngOf(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function colTop(x){ for (let r = 0; r < ROWS; r++) if (grid[r][x] !== '.') return r; return -1; }
 function findSplit(){
@@ -1120,8 +1271,10 @@ function hardenLevel(){
   if (boss) { if (boss.kind === 'monster') { boss.hp = 12; boss.maxHp = 12; } else { boss.hp = 8; boss.maxHp = 8; } }
 }
 function buildLevel(){ if (G.training) { LV = Object.assign({}, ACTS[1], { name: 'Treino', sub: 'Aprenda a jogar', facade: null, sign: false }); levelTreino(); Object.assign(HARD, { sp: 1, hop: 45, hopV: 1.1, crUp: 100, spawn: 110 }); return; }
-  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18, 19: level19, 20: level20, 21: level21, 22: level22, 23: level23, 24: level24 })[G.act](); hardenLevel(); hints.length = 0;
+  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18, 19: level19, 20: level20, 21: level21, 22: level22, 23: level23, 24: level24, 25: level25, 26: level26, 27: level27, 28: level28, 29: level29, 30: level30 })[G.act](); hardenLevel(); hints.length = 0;
   if (!LV.par) LV.par = boss ? (boss.kind === 'monster' ? 110 : 85) : Math.round(COLS / 5 + 15);
+  guias.forEach(k => { if (G.keyRun && G.keyRun[k.color]) k.got = true; });
+  doors.forEach(d => { if (d.key && G.doorRun && G.doorRun[d.id]) { d.open = true; d.lift = 1; for (let y = d.ty0; y < d.ty1; y++) setT(d.tx, y, '.'); } });
   const gm2 = loadNum('motoca-gold-' + G.act); golds.forEach((g, i) => { g.had = !!(gm2 & (1 << i)); g.got = !!(G.goldRun && G.goldRun[i]); }); }
 const tileAt = (tx, ty) => (tx < 0 || tx >= COLS) ? 'B' : (ty < -TOPX || ty >= ROWS) ? '.' : grid[ty][tx];
 const solid = c => c === '#' || c === 'B' || c === 'D' || c === 'C' || c === 'W';
@@ -1138,6 +1291,7 @@ function spawn(){
   P.charge = 0; P.charging = false; P.dashT = 0; P.wallDir = 0; P.wallT = 0; P.wallLock = 0;
   G.ringsN = 0; G.frames = c ? c.time : 0; G.lock = false; G.nextLifeAt = 100;
   if (c) checks.forEach(k => { if (k.x <= c.x) k.on = true; });
+  if (LV && LV.countdown) G.cd = G.cdCheck != null ? Math.max(G.cdCheck, 45 * 60) : LV.countdown * 60;
   G.freeze = 0; if (LV && LV.chase) { LV.chase.x = P.x - 300; LV.chase.cur = LV.chase.sp; }
 }
 function moveX(){
@@ -1288,6 +1442,15 @@ function interact(prevY){
     g.got = true; G.score += 1000; sfx('selo'); buzz(40); pop(g.x, g.y - 14, 'Selo dourado!', 110, 0.3); for (let i = 0; i < 3; i++) spark(g.x, g.y);
     const gi = golds.indexOf(g); G.goldRun = G.goldRun || {}; G.goldRun[gi] = 1; const k = 'motoca-gold-' + G.act; try { localStorage.setItem(k, String(loadNum(k) | (1 << gi))); } catch(e) {}
   }
+  for (const k of guias) if (!k.got && Math.abs(k.x - P.x) < 14 && Math.abs(k.y - (P.y - 11)) < 18) {
+    k.got = true; G.keyRun = G.keyRun || {}; G.keyRun[k.color] = 1; sfx('selo'); G.score += 200; pop(k.x, k.y - 16, 'Guia ' + k.color + '!', 110, 0.3); spark(k.x, k.y);
+  }
+  for (const d of doors) if (d.key && !d.open && Math.abs(d.tx * T + 8 - P.x) < 20 && P.y > d.ty0 * T && P.y - P.h < d.ty1 * T) {
+    if (G.keyRun && G.keyRun[d.key]) { d.open = true; for (let y = d.ty0; y < d.ty1; y++) setT(d.tx, y, '.'); G.doorRun = G.doorRun || {}; G.doorRun[d.id] = 1; sfx('check'); pop(P.x, P.y - 50, 'Guia ' + d.key + ' aceita!', 90, 0.3); }
+    else if (G.t - (d.msg || -999) > 120) { d.msg = G.t; pop(P.x, P.y - 50, 'Precisa da guia ' + d.key + '!', 100, 0.25); }
+  }
+  for (const c of cascades) if (c.active && Math.abs(c.x - P.x) < 14 && P.y > c.ty0 * T && P.y - P.h < c.ty1 * T) hurt(c.x);
+  for (const h of hourglasses) if (!h.got && Math.abs(h.x - P.x) < 14 && Math.abs(h.y - (P.y - 11)) < 18) { h.got = true; G.cd = (G.cd || 0) + 12 * 60; sfx('life'); pop(h.x, h.y - 16, '+12 s', 90, 0.4); spark(h.x, h.y); }
   for (const ck of clocks) if (ck.cd <= 0 && Math.abs(ck.x - P.x) < 14 && P.y > ck.y - 40 && P.y - P.h < ck.y) {
     const bossOn = boss && G.lock && boss.state !== 'dead'; G.freeze = bossOn ? (boss.hp <= (boss.maxHp || 8) / 2 ? 120 : 160) : 300; ck.cd = bossOn ? 300 : 420;
     sfx('check'); buzz(30); pop(ck.x, ck.y - 60, bossOn ? 'Ponto batido! A máquina parou!' : 'Ponto batido! Máquinas paradas!', 100, 0.3);
@@ -1340,7 +1503,7 @@ function interact(prevY){
   }
   for (const h of hints) if (!h.shown && P.x > h.x) { h.shown = true; if (G.hintPop) G.hintPop.life = Math.min(G.hintPop.life, 1); pop(P.x + 40, P.y - 62, h.text, 220, 0.03); G.hintPop = pops[pops.length - 1]; break; }
   if (npc && !npc.said && P.x > npc.x - 70) { npc.said = true; pop(npc.x, npc.y - 64, npc.text, 200, 0.1); }
-  for (const k of checks) if (!k.on && Math.abs(k.x - P.x) < 12) { k.on = true; G.check = { x:k.x, y:k.y, time:G.frames }; sfx('check'); }
+  for (const k of checks) if (!k.on && Math.abs(k.x - P.x) < 12 && (!(LV.zone >= 9) || Math.abs(k.y - P.y) < 48)) { k.on = true; G.check = { x:k.x, y:k.y, time:G.frames }; G.cdCheck = G.cd; sfx('check'); }
   if (goal && !goal.done && (LV && LV.vertical ? Math.abs(P.x - goal.x) < 26 && Math.abs(P.y - goal.y) < 30 : P.x > goal.x)) { goal.done = true; P.state = 'goal'; G.goalT = 0; sfx('goal'); }
 }
 function giveItem(item, x, y){
@@ -1354,6 +1517,10 @@ function updateWorld(){
   const FZ = G.freeze > 0;
   if (FZ) { G.freeze--; if (G.freeze % 60 === 0 && G.freeze > 0) beep(G.freeze <= 60 ? 1400 : 900, 0.05, 'square', 0.04); if (G.freeze === 0) beep(500, 0.2, 'sawtooth', 0.05, 900); }
   for (const ck of clocks) if (ck.cd > 0) ck.cd--;
+  for (const c of cascades) { const k = (G.t + c.ph) % c.period; c.active = k < c.on; c.warn = k >= c.period - 45; }
+  for (const g of gates) { const k = (G.t + g.ph) % g.period, want = k >= g.open; g.warn = !want && k >= g.open - 50;
+    if (want && !g.closed) { const inside = Math.abs(g.tx * T + 8 - P.x) < 16 && P.y > g.ty0 * T && P.y - P.h < g.ty1 * T; if (!inside) { g.closed = true; for (let y = g.ty0; y < g.ty1; y++) setT(g.tx, y, 'D'); } }
+    else if (!want && g.closed) { g.closed = false; for (let y = g.ty0; y < g.ty1; y++) setT(g.tx, y, '.'); } }
   if (LV && LV.chase && G.state === 'play' && P.state === 'play') {
     const c = LV.chase;
     if (!FZ) { c.cur = Math.min(c.max, c.cur + c.acc); c.x += c.cur; }
@@ -1444,7 +1611,7 @@ function bossLockCheck(){
   if (!boss || G.lock || P.state !== 'play') return;
   if (P.x > (boss.a0 + 3) * T) {
     G.lock = true; for (let y = 0; y < 13; y++) grid[y][boss.a0 - 1] = 'B'; playSong('chefe');
-    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : boss.kind === 'freezer' ? 'Pule em cima quando ele abrir a tampa!' : boss.kind === 'truck' ? 'Pule o caminhão! Quando ele bater, pule em cima!' : boss.kind === 'balloon' ? 'Quando o balão descer, pule no cesto!' : boss.kind === 'monster' ? 'Quando o monstro se abaixar, pule na cabeça!' : boss.kind === 'tabeliao' ? 'Quando o carimbo prender no chão, pule na cabeça dele ou use a arrancada!' : boss.kind === 'maquina' ? 'Bata o ponto no relógio: a máquina para e aí dá para pular em cima dela!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
+    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : boss.kind === 'freezer' ? 'Pule em cima quando ele abrir a tampa!' : boss.kind === 'truck' ? 'Pule o caminhão! Quando ele bater, pule em cima!' : boss.kind === 'balloon' ? 'Quando o balão descer, pule no cesto!' : boss.kind === 'monster' ? 'Quando o monstro se abaixar, pule na cabeça!' : boss.kind === 'tabeliao' ? 'Quando o carimbo prender no chão, pule na cabeça dele ou use a arrancada!' : boss.kind === 'maquina' ? 'Bata o ponto no relógio: a máquina para e aí dá para pular em cima dela!' : boss.kind === 'calc' ? 'Fuja das cascatas! Quando ela parar para calcular, pule em cima!' : boss.kind === 'crane' ? 'Desvie dos contêineres! Quando a garra ficar presa no chão, pule em cima!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
   }
 }
 function throwCrates(){
@@ -1557,7 +1724,7 @@ function updateTruck(b){
       break;
   }
 }
-function crateColor(c){ return c.kind === 'ice' ? 0xbfe8ff : c.kind === 'tomato' ? 0xd7263d : 0xf4f0e6; }
+function crateColor(c){ return c.kind === 'cont' ? 0xe0702a : c.kind === 'ice' ? 0xbfe8ff : c.kind === 'tomato' ? 0xd7263d : 0xf4f0e6; }
 function throwIce(b){
   const sx = b.x + b.dir * 30, tgt = P.x + (Math.random() - 0.5) * 40;
   b.crates.push({ kind: 'ice', g: 0.2, x: sx, y: b.y - 22, vx: Math.max(-3.5, Math.min(3.5, (tgt - sx) / 50)), vy: -5.2, rot: 0, alive: true });
@@ -1657,6 +1824,37 @@ function updateTabeliao(b){
   }
   if (b.waves.length > 10) b.waves = b.waves.filter(w => w.alive);
 }
+function updateCrane(b){
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= (b.maxHp || 8) / 2, G0 = 13 * T, HY = G0 - 96;
+  switch (b.state) {
+    case 'enter': b.y += (HY - b.y) * 0.05; if (Math.abs(b.y - HY) < 1) { b.y = HY; b.state = 'move'; b.t = 0; b.cd = 50; } break;
+    case 'move': { const sp = hard ? 1.7 : 1.2, d = P.x - b.x; if (Math.abs(d) > 3) b.x = Math.max(L, Math.min(R, b.x + Math.sign(d) * sp)); b.dir = Math.sign(d) || b.dir;
+      b.cd--; if (b.cd <= 0 && Math.abs(d) < 50) { b.cd = hard ? 55 : 80; b.crates.push({ kind: 'cont', g: 0.12, max: 4.2, x: b.x, y: b.y + 14, vx: 0, vy: 0.5, rot: 0, alive: true }); beep(300, 0.08, 'square', 0.05); }
+      if (b.t > (hard ? 210 : 270)) { b.state = 'aim'; b.t = 0; b.tx = Math.max(L, Math.min(R, P.x)); sfx('alarm'); }
+      break; }
+    case 'aim': b.x += (b.tx - b.x) * 0.15; if (b.t % 6 === 0) addPart(b.tx + (Math.random() - 0.5) * 30, G0 - 2, 0, -0.6, 0, 20, 0xff3d3d, 0.9); if (b.t > (hard ? 40 : 55)) { b.state = 'slam'; b.t = 0; b.vy = 1; } break;
+    case 'slam': b.vy += 0.7; b.y += b.vy; if (b.y >= G0) { b.y = G0; b.vy = 0; b.state = 'stuck'; b.t = 0; sfx('crash'); dust(b.x - 20, G0); dust(b.x + 20, G0); buzz(40); } break;
+    case 'stuck': if (b.t % 10 === 0) addPart(b.x + (Math.random() - 0.5) * 30, b.y - 30, (Math.random() - 0.5) * 1.5, -1.5, 0.1, 22, 0xffd23f, 0.8); if (b.t > (hard ? 100 : 140)) { b.state = 'rise'; b.t = 0; } break;
+    case 'rise': b.y -= 2.2; if (b.y <= HY) { b.y = HY; b.state = 'move'; b.t = 0; b.cd = 40; } break;
+  }
+}
+function updateCalc(b){
+  const L = (b.a0 + 3) * T + 8, R = (b.a1 - 3) * T + 8, hard = b.hp <= (b.maxHp || 8) / 2, G0 = 13 * T;
+  if (!b.cols) b.cols = [];
+  switch (b.state) {
+    case 'enter': b.vy += 0.35; b.y += b.vy; if (b.y >= G0) { b.y = G0; b.vy = 0; b.state = 'walk'; b.t = 0; sfx('crash'); dust(b.x - 24, b.y); dust(b.x + 24, b.y); } break;
+    case 'walk': { const sp = hard ? 1.4 : 1.0, d = Math.sign(P.x - b.x); b.dir = d; if (Math.abs(P.x - b.x) > 52) { b.x = Math.max(L, Math.min(R, b.x + d * sp)); }
+      if (b.t > (hard ? 80 : 110)) { b.state = 'cascata'; b.t = 0; sfx('alarm'); const n = hard ? 3 : 2; for (let i = 0; i < n; i++) b.cols.push({ x: Math.max(L - 24, Math.min(R + 24, P.x + [0, -76, 76][i])), t: 0 }); }
+      break; }
+    case 'cascata': b.arm = Math.min(1, b.t / 15); if (b.t > 110) { b.state = 'calc'; b.t = 0; b.arm = 0; } break;
+    case 'calc': if (b.t % 16 === 0) beep(600 + (b.t % 48) * 8, 0.04, 'square', 0.03); if (b.t > (hard ? 80 : 110)) { b.state = 'walk'; b.t = 0; } break;
+  }
+  for (const c of b.cols) { c.t++;
+    if (c.t < 45 && c.t % 9 === 0) addPart(c.x, G0 - 150, 0, 1.5, 0.05, 30, 0xffd23f, 0.8);
+    if (c.t >= 45 && c.t % 3 === 0) addPart(c.x + (Math.random() - 0.5) * 16, G0 - 150, 0, 3.5, 0.05, 40, 0xd7263d, 1.3);
+    if (c.t > 45 && c.t < 105 && P.state === 'play' && Math.abs(P.x - c.x) < 14) hurt(c.x); }
+  b.cols = b.cols.filter(c => c.t < 110);
+}
 function updateMaquina(b){
   const L = (b.a0 + 3) * T + 8, R = (b.a1 - 4) * T + 8, hard = b.hp <= (b.maxHp || 8) / 2, G0 = 13 * T;
   if (b.state === 'enter') { b.vy += 0.35; b.y += b.vy; if (b.y >= G0) { b.y = G0; b.vy = 0; b.state = 'work'; b.t = 0; sfx('crash'); dust(b.x - 30, b.y); dust(b.x + 30, b.y); } return; }
@@ -1689,6 +1887,8 @@ function updateBoss(){
   else if (b.kind === 'monster' && b.state !== 'dead') updateMonster(b);
   else if (b.kind === 'tabeliao' && b.state !== 'dead') updateTabeliao(b);
   else if (b.kind === 'maquina' && b.state !== 'dead') updateMaquina(b);
+  else if (b.kind === 'calc' && b.state !== 'dead') updateCalc(b);
+  else if (b.kind === 'crane' && b.state !== 'dead') updateCrane(b);
   else switch (b.state) {
     case 'enter':
       b.vy += 0.35; b.y += b.vy;
@@ -1714,7 +1914,7 @@ function updateBoss(){
       if (b.t < 120 && b.t % 5 === 0) burst(b.x + (Math.random() - 0.5) * 44, b.y - 10 - Math.random() * 30, Math.random() < 0.5 ? 0x777777 : 0xffb84a);
       if (b.t < 120 && b.t % 15 === 0) sfx('pop');
       if (b.t > 50) { b.zeX += 2.4; b.zeY = Math.abs(Math.sin(b.t * 0.22)) * 10 + (b.t < 70 ? (b.t - 50) * 1.2 : 0); }
-      if (b.t === 120) { pop(b.x, b.y - 70, b.kind === 'panel' ? 'Senha chamada: a sua!' : b.kind === 'freezer' ? 'Processo descongelado!' : b.kind === 'truck' ? 'Mercadoria liberada!' : b.kind === 'balloon' ? 'Imposto devolvido!' : b.kind === 'monster' ? 'Burocracia vencida!' : b.kind === 'tabeliao' ? 'Firma reconhecida!' : b.kind === 'maquina' ? 'Funcionário registrado!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
+      if (b.t === 120) { pop(b.x, b.y - 70, b.kind === 'panel' ? 'Senha chamada: a sua!' : b.kind === 'freezer' ? 'Processo descongelado!' : b.kind === 'truck' ? 'Mercadoria liberada!' : b.kind === 'balloon' ? 'Imposto devolvido!' : b.kind === 'monster' ? 'Burocracia vencida!' : b.kind === 'tabeliao' ? 'Firma reconhecida!' : b.kind === 'maquina' ? 'Funcionário registrado!' : b.kind === 'calc' ? 'Nota fiscal emitida!' : b.kind === 'crane' ? 'Carga desembaraçada!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
       break;
   }
   for (const c of b.crates) {
@@ -1728,9 +1928,9 @@ function updateBoss(){
     if (G.freeze > 0 && b.kind === 'maquina') continue;
     const tk = c.kind === 'ticket' || c.kind === 'boleto';
     c.vy += c.g || 0.2; if (c.max) c.vy = Math.min(c.vy, c.max);
-    c.x += c.vx + (tk ? Math.sin(b.t * 0.1 + c.rot) * 0.6 : 0); c.y += c.vy; c.rot += tk ? 0.05 : 0.12 * Math.sign(c.vx || 1);
+    c.x += c.vx + (tk ? Math.sin(b.t * 0.1 + c.rot) * 0.6 : 0); c.y += c.vy; c.rot += tk ? 0.05 : c.kind === 'cont' ? 0 : 0.12 * Math.sign(c.vx || 1);
     if (c.vy > 0 && c.y >= 13 * T - (tk ? 2 : 8)) { c.alive = false; if (tk) addPart(c.x, c.y - 2, 0, -0.5, 0, 14, 0xffffff, 1); else { burst(c.x, c.y, crateColor(c)); sfx('crash'); } continue; }
-    if (P.state === 'play' && Math.abs(c.x - P.x) < (tk ? 11 : 15) && c.y > P.y - P.h - (tk ? 4 : 9) && c.y < P.y + 6) {
+    if (P.state === 'play' && Math.abs(c.x - P.x) < (tk ? 11 : c.kind === 'cont' ? 22 : 15) && c.y > P.y - P.h - (tk ? 4 : c.kind === 'cont' ? 16 : 9) && c.y < P.y + 6) {
       if (P.ball) { c.alive = false; burst(c.x, c.y, crateColor(c)); sfx('pop'); G.score += 10; P.vy = Math.min(P.vy, -4); }
       else hurt(c.x);
     }
@@ -1741,10 +1941,12 @@ function bossInteract(pb, prevY){
   bossLockCheck();
   const b = boss;
   if (!b || b.state === 'idle' || b.state === 'enter' || b.state === 'dead' || P.state !== 'play') return;
-  const pan = b.kind === 'panel', frz = b.kind === 'freezer', trk = b.kind === 'truck', bal = b.kind === 'balloon', mon = b.kind === 'monster', tab = b.kind === 'tabeliao', mq = b.kind === 'maquina';
-  const bb = mq ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 58, y1: b.y } : tab ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - (b.state === 'stuck' ? 46 : 70), y1: b.y } : mon ? { x0: b.x - 34, x1: b.x + 34, y0: b.y - (60 - 26 * b.crouch), y1: b.y } : bal ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - 30, y1: b.y } : trk ? { x0: b.x - 32, x1: b.x + 32, y0: b.y - 40, y1: b.y } : pan ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 46, y1: b.y } : frz ? { x0: b.x - 26, x1: b.x + 26, y0: b.y - 42, y1: b.y } : { x0: b.x - 22, x1: b.x + 22, y0: b.y - 36, y1: b.y };
+  const pan = b.kind === 'panel', frz = b.kind === 'freezer', trk = b.kind === 'truck', bal = b.kind === 'balloon', mon = b.kind === 'monster', tab = b.kind === 'tabeliao', mq = b.kind === 'maquina', cal = b.kind === 'calc', crn = b.kind === 'crane';
+  const bb = crn ? { x0: b.x - 21, x1: b.x + 21, y0: b.y - 32, y1: b.y } : cal ? { x0: b.x - 26, x1: b.x + 26, y0: b.y - (b.state === 'calc' ? 42 : 62), y1: b.y } : mq ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 58, y1: b.y } : tab ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - (b.state === 'stuck' ? 46 : 70), y1: b.y } : mon ? { x0: b.x - 34, x1: b.x + 34, y0: b.y - (60 - 26 * b.crouch), y1: b.y } : bal ? { x0: b.x - 22, x1: b.x + 22, y0: b.y - 30, y1: b.y } : trk ? { x0: b.x - 32, x1: b.x + 32, y0: b.y - 40, y1: b.y } : pan ? { x0: b.x - 30, x1: b.x + 30, y0: b.y - 46, y1: b.y } : frz ? { x0: b.x - 26, x1: b.x + 26, y0: b.y - 42, y1: b.y } : { x0: b.x - 22, x1: b.x + 22, y0: b.y - 36, y1: b.y };
   if (!overlap(pb, bb)) return;
   const stomp = P.vy > 0 && prevY <= bb.y0 + 8;
+  if (crn && b.state !== 'stuck') { if (stomp && b.state !== 'slam') { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.8; P.onGround = false; P.dashT = 0; beep(900, 0.06, 'square', 0.06); } else hurt(b.x); return; }
+  if (cal && b.state !== 'calc') { if (stomp || P.ball) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.8; P.onGround = false; P.dashT = 0; beep(900, 0.06, 'square', 0.06); if (G.t - (b.msg || -999) > 100) { b.msg = G.t; pop(b.x, b.y - 80, 'Espere ela parar para calcular!', 90, 0.2); } } else hurt(b.x); return; }
   if (mq && b.state !== 'frozen') { if (stomp || P.ball) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.8; P.onGround = false; P.dashT = 0; beep(900, 0.06, 'square', 0.06); if (G.t - (b.msg || -999) > 100) { b.msg = G.t; pop(b.x, b.y - 80, 'Está ligada! Bata o ponto primeiro.', 90, 0.2); } } else hurt(b.x); return; }
   if (tab && b.state !== 'stuck') { if (stomp || P.ball) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.8; P.onGround = false; P.dashT = 0; beep(900, 0.06, 'square', 0.06); if (G.t - (b.msg || -999) > 100) { b.msg = G.t; pop(b.x, b.y - 80, 'O carimbo protege! Espere prender no chão.', 90, 0.2); } } else hurt(b.x); return; }
   if (pan && b.state === 'stuck' && !P.ball && !stomp) { P.x = P.x < b.x ? bb.x0 - P.w / 2 - 0.5 : bb.x1 + P.w / 2 + 0.5; P.vx = 0; return; }
@@ -1757,7 +1959,7 @@ function bossInteract(pb, prevY){
   if (frz && b.state !== 'open' && (P.ball || stomp)) { P.vy = -5; P.vx = (P.x < b.x ? -1 : 1) * 2.4; P.onGround = false; beep(900, 0.06, 'square', 0.06); return; }
   if ((P.ball || stomp) && (!pan || b.state === 'stuck')) {
     if (b.inv === 0) {
-      b.hp--; b.inv = 50; G.score += 100; sfx('bosshit'); buzz(35); burst(P.x, bb.y0, 0xffffff); if (mq) G.freeze = Math.min(G.freeze, 45);
+      b.hp--; b.inv = 50; G.score += 100; sfx('bosshit'); buzz(35); burst(P.x, bb.y0, 0xffffff); if (mq) G.freeze = Math.min(G.freeze, 45); if (cal && b.hp > 0) { b.state = 'walk'; b.t = 0; } if (crn && b.hp > 0) { b.state = 'rise'; b.t = 0; }
       if (mon && b.hp > 0 && b.hp % 4 === 0) { b.phase++; b.state = 'roar'; b.t = 0; b.inv = 70; pop(b.x, b.y - 90, `Etapa ${b.phase} de 3!`, 120, 0.2); }
       if (b.hp <= 0) {
         b.state = 'dead'; b.t = 0; G.score += 1000; pop(b.x, b.y - 50, '1000'); sfx('win');
@@ -1812,7 +2014,9 @@ const SKIES = {
   night: { tex: skyTex([[0, '#0c0824'], [0.6, '#2a1a4a'], [1, '#6a2a5a']]), fog: 0x2a1f44, sun: 0xb8c8ff, si: 0.6, hemi: 0xa89ae0, hi: 0.75 },
   palace: { tex: skyTex([[0, '#5a2030'], [1, '#c8a070']]), fog: 0xe8d4b0, sun: 0xfff0d0, si: 0.62, hemi: 0xfff0dc, hi: 0.85 },
   cartorio: { tex: skyTex([[0, '#4a3020'], [1, '#c8a878']]), fog: 0xd8c4a0, sun: 0xfff2dc, si: 0.66, hemi: 0xfff0d8, hi: 0.86 },
-  fabrica: { tex: skyTex([[0, '#2a2e38'], [1, '#9aa0a8']]), fog: 0xa8acb4, sun: 0xfff4e0, si: 0.7, hemi: 0xe8eef8, hi: 0.8 }
+  fabrica: { tex: skyTex([[0, '#2a2e38'], [1, '#9aa0a8']]), fog: 0xa8acb4, sun: 0xfff4e0, si: 0.7, hemi: 0xe8eef8, hi: 0.8 },
+  porto: { tex: skyTex([[0, '#4a86c8'], [0.7, '#f4c890'], [1, '#f8dcb0']]), fog: 0xf0d8b8, sun: 0xfff0d8, si: 0.8, hemi: 0xfff4e4, hi: 0.78 },
+  labirinto: { tex: skyTex([[0, '#3a2a10'], [1, '#d8c080']]), fog: 0xd8c898, sun: 0xfff2d0, si: 0.68, hemi: 0xfff4dc, hi: 0.84 }
 };
 function applySky(k){ const S = SKIES[k] || SKIES.day; scene.background = S.tex; scene.fog.color.setHex(S.fog); sun.color.setHex(S.sun); sun.intensity = S.si; hemi.color.setHex(S.hemi); hemi.intensity = S.hi; }
 
@@ -1891,7 +2095,7 @@ function makeTextures(){
     palWall((c) => { plaque(c, 'Departamento de Departamentos', 60, 15); c.fillStyle = '#8a5a32'; c.fillRect(88, 84, 80, 78); c.fillStyle = '#6a4222'; c.fillRect(96, 92, 28, 66); c.fillRect(132, 92, 28, 66); c.fillStyle = '#ffd56a'; c.fillRect(126, 120, 4, 10); }),
     palWall((c) => { plaque(c, 'Protocolo Geral', 40, 18); c.fillStyle = '#5a3a22'; c.fillRect(56, 70, 144, 90); for (let k = 0; k < 4; k++) for (let i = 0; i < 6; i++) { c.fillStyle = '#fffaf0'; c.fillRect(64 + i * 22, 78 + k * 20, 16, 14); c.fillStyle = '#d7263d'; c.fillRect(64 + i * 22, 84 + k * 20, 16, 2); } })
   ];
-  TX.docs = { 1: TX.doc, 2: docTex('ALVARÁ'), 3: docTex('AVCB'), 4: docTex('LICENÇA'), 5: docTex('IE'), 6: docTex('CND'), 7: docTex('CONTRATO'), 8: docTex('REGISTRO') };
+  TX.docs = { 1: TX.doc, 2: docTex('ALVARÁ'), 3: docTex('AVCB'), 4: docTex('LICENÇA'), 5: docTex('IE'), 6: docTex('CND'), 7: docTex('CONTRATO'), 8: docTex('REGISTRO'), 9: docTex('NOTA'), 10: docTex('LICENÇA') };
   TX.cartFloor = ctex(64, 64, (c) => { c.fillStyle = '#9a6a3a'; c.fillRect(0, 0, 64, 64); for (let i = 0; i < 4; i++) for (let j = 0; j < 4; j++) { c.fillStyle = (i + j) % 2 ? '#a8784a' : '#8a5a2e'; if ((i + j) % 2) c.fillRect(i * 16 + 1, j * 16 + 1, 14, 6), c.fillRect(i * 16 + 1, j * 16 + 9, 14, 6); else c.fillRect(i * 16 + 1, j * 16 + 1, 6, 14), c.fillRect(i * 16 + 9, j * 16 + 1, 6, 14); } }, true);
   TX.cartEdge = ctex(64, 16, (c) => { c.fillStyle = '#5a3418'; c.fillRect(0, 0, 64, 16); c.fillStyle = '#8a5a2e'; c.fillRect(0, 0, 64, 4); c.fillStyle = '#c8962a'; c.fillRect(0, 12, 64, 2); }, true);
   TX.cartBase = ctex(64, 64, (c) => { c.fillStyle = '#6a3e1e'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#5a3418'; c.fillRect(4, 6, 24, 52); c.fillRect(36, 6, 24, 52); c.fillStyle = '#7e4c26'; c.fillRect(6, 8, 20, 48); c.fillRect(38, 8, 20, 48); }, true);
@@ -1928,6 +2132,47 @@ function makeTextures(){
     fabWall((c) => poster(c, 'CONTRATA-SE', ['1 vaga', 'Carteira assinada', 'Registro no', 'primeiro dia'], '#d7263d')),
     fabWall((c) => { c.fillStyle = '#3a3e46'; for (let k = 0; k < 4; k++) c.fillRect(20, 30 + k * 26, 216, 8); c.fillStyle = '#c8962a'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(60 + k * 70, 90, 22, 0, Math.PI * 2); c.fill(); } c.fillStyle = '#4a4e56'; for (let k = 0; k < 3; k++) { c.beginPath(); c.arc(60 + k * 70, 90, 8, 0, Math.PI * 2); c.fill(); } }),
     fabWall((c) => poster(c, 'HORA EXTRA?', ['Vale 50% a mais', 'que a hora normal', '(no mínimo)', ''], '#3a7a4a'))
+  ];
+  TX.labFloor = ctex(64, 64, (c) => { c.fillStyle = '#c86a3e'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#b85c32'; c.fillRect(0, 0, 32, 32); c.fillRect(32, 32, 32, 32); c.fillStyle = '#8a3e20'; c.fillRect(0, 31, 64, 2); c.fillRect(31, 0, 2, 64); }, true);
+  TX.labEdge = ctex(64, 16, (c) => { c.fillStyle = '#8a6a1a'; c.fillRect(0, 0, 64, 16); c.fillStyle = '#ffd56a'; c.fillRect(0, 0, 64, 4); c.fillStyle = '#6a4a10'; for (let x = 2; x < 64; x += 8) c.fillRect(x, 7, 4, 6); }, true);
+  TX.labBase = ctex(64, 64, (c) => { c.fillStyle = '#5a4a3a'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#4a3a2a'; for (let y = 0; y < 64; y += 21) { c.fillRect(0, y, 64, 2); const o = (y / 21 | 0) % 2 ? 21 : 0; for (let x = o; x < 85; x += 42) c.fillRect(x, y, 2, 21); } }, true);
+  TX.labBox = ctex(64, 64, (c) => { c.fillStyle = '#f2d36a'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#e2c050'; for (let y = 4; y < 64; y += 6) c.fillRect(2, y, 60, 2); c.fillStyle = '#8a5a1a'; c.fillRect(28, 0, 8, 64); c.fillRect(0, 28, 64, 8);
+    c.fillStyle = '#fffaf0'; c.fillRect(10, 8, 18, 14); c.fillStyle = '#1a0b12'; for (let x = 12; x < 26; x += 2) c.fillRect(x, 10, 1, 10); c.strokeStyle = '#6a4a10'; c.lineWidth = 3; c.strokeRect(1, 1, 62, 62); });
+  TX.labShelf = ctex(32, 8, (c) => { c.fillStyle = '#8a6a1a'; c.fillRect(0, 0, 32, 8); c.fillStyle = '#ffd56a'; c.fillRect(0, 0, 32, 3); }, true);
+  TX.labHigh = ctex(64, 64, (c) => { c.fillStyle = '#2f4a3a'; c.fillRect(0, 0, 64, 64); c.strokeStyle = '#3f5e4a'; c.lineWidth = 4; c.beginPath(); c.moveTo(4, 4); c.lineTo(60, 4); c.lineTo(60, 60); c.lineTo(12, 60); c.lineTo(12, 14); c.lineTo(50, 14); c.lineTo(50, 50); c.lineTo(22, 50); c.lineTo(22, 24); c.lineTo(40, 24); c.lineTo(40, 40); c.stroke(); }, true);
+  TX.portFloor = ctex(64, 64, (c) => { c.fillStyle = '#5a5e66'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#4e525a'; for (let i = 0; i < 40; i++) c.fillRect((i * 37) % 64, (i * 23) % 64, 3, 2); c.fillStyle = '#f2c14e'; c.fillRect(0, 30, 26, 4); c.fillRect(38, 30, 26, 4); }, true);
+  TX.portEdge = ctex(64, 16, (c) => { c.fillStyle = '#1a1a1e'; c.fillRect(0, 0, 64, 16); c.fillStyle = '#f2c14e'; for (let x = -16; x < 64; x += 16) { c.beginPath(); c.moveTo(x, 16); c.lineTo(x + 8, 16); c.lineTo(x + 16, 0); c.lineTo(x + 8, 0); c.fill(); } }, true);
+  TX.portBase = ctex(64, 64, (c) => { c.fillStyle = '#8a8e96'; c.fillRect(0, 0, 64, 64); c.fillStyle = '#7a7e86'; c.fillRect(0, 31, 64, 2); c.fillRect(31, 0, 2, 64); c.fillStyle = '#9aa0a8'; c.fillRect(4, 4, 8, 3); c.fillRect(40, 44, 10, 3); }, true);
+  const contTex = (col, dk) => ctex(64, 64, (c) => { c.fillStyle = col; c.fillRect(0, 0, 64, 64); c.fillStyle = dk; for (let x = 2; x < 64; x += 8) c.fillRect(x, 3, 3, 58); c.fillStyle = 'rgba(0,0,0,.35)'; c.fillRect(0, 0, 64, 3); c.fillRect(0, 61, 64, 3); c.fillRect(0, 0, 3, 64); c.fillRect(61, 0, 3, 64); });
+  TX.contO = contTex('#e0702a', '#c05a1a'); TX.contB = contTex('#2e6bb0', '#1e5090'); TX.contG = contTex('#3a8a4a', '#2a6a38'); TX.contR = contTex('#b8323a', '#90222a');
+  TX.portShelf = ctex(32, 8, (c) => { c.fillStyle = '#6a7080'; c.fillRect(0, 0, 32, 8); c.fillStyle = '#f2c14e'; c.fillRect(0, 0, 32, 3); }, true);
+  TX.gateStripe = ctex(32, 64, (c) => { c.fillStyle = '#ffffff'; c.fillRect(0, 0, 32, 64); c.fillStyle = '#d7263d'; for (let y = -32; y < 64; y += 16) { c.beginPath(); c.moveTo(0, y); c.lineTo(32, y + 16); c.lineTo(32, y + 24); c.lineTo(0, y + 8); c.fill(); } }, true);
+  TX.craneSign = ctex(512, 96, (c, w, h) => { c.fillStyle = '#1a1a1e'; c.fillRect(0, 0, w, h); c.strokeStyle = '#f2c14e'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.fillStyle = '#f2c14e'; c.font = '800 36px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Guindaste da Alfândega', w / 2, h / 2 + 2); });
+  const portWall = (draw) => ctex(256, 224, (c, w, h) => { c.fillStyle = '#c8ccd2'; c.fillRect(0, 0, w, h); c.fillStyle = '#b4b8c0'; for (let x = 0; x < w; x += 16) c.fillRect(x, 0, 4, h); c.fillStyle = '#6a7080'; c.fillRect(0, 150, w, 74); c.fillStyle = '#f2c14e'; c.fillRect(0, 146, w, 5); draw(c, w, h); });
+  const panel = (c, x, y, w, h, bg, lines, fg='#fff', fs=16) => { c.fillStyle = bg; c.fillRect(x, y, w, h); c.strokeStyle = '#1a1a1e'; c.lineWidth = 3; c.strokeRect(x, y, w, h); c.fillStyle = fg; c.font = `800 ${fs}px "Baloo 2", sans-serif`; c.textAlign = 'center'; c.textBaseline = 'middle'; lines.forEach((l, i) => c.fillText(l, x + w / 2, y + h / 2 + (i - (lines.length - 1) / 2) * (fs + 4))); };
+  TX.portWall = [
+    portWall((c) => { panel(c, 40, 20, 176, 40, '#1a1a1e', ['ALFÂNDEGA'], '#f2c14e', 22); [['#2e9a5a', 'VERDE'], ['#f2c14e', 'AMARELO'], ['#d7263d', 'VERMELHO']].forEach(([col, n], i) => { c.fillStyle = col; c.beginPath(); c.arc(64 + i * 64, 92, 16, 0, Math.PI * 2); c.fill(); c.fillStyle = '#1a1a1e'; c.font = '800 10px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText(n, 64 + i * 64, 124); }); }),
+    portWall((c) => { panel(c, 46, 22, 164, 110, '#f4ecd8', ['FRETE', '+ SEGURO', '+ IMPOSTO', '+ IMPOSTO...'], '#1a1a1e', 17); }),
+    portWall((c) => { c.fillStyle = '#3a3e48'; c.fillRect(40, 30, 176, 116); c.fillStyle = '#2a2e36'; for (let x = 44; x < 214; x += 12) c.fillRect(x, 30, 6, 116); panel(c, 70, 8, 116, 30, '#f2c14e', ['DOCA 7'], '#1a1a1e', 16); }),
+    portWall((c) => { panel(c, 52, 26, 152, 100, '#d7263d', ['CANAL', 'VERMELHO:', 'CONFERIR TUDO'], '#fff', 16); }),
+    portWall((c) => { panel(c, 46, 22, 164, 110, '#2e6bb0', ['SUA CARGA', 'ESTÁ NA FILA', 'POSIÇÃO: 4.512'], '#fff', 16); })
+  ];
+  TX.guiaSign = {};
+  for (const [k, col] of Object.entries({ vermelha: '#d7263d', azul: '#2e6bd0', verde: '#2e9a5a' })) TX.guiaSign[k] = ctex(128, 64, (c, w, h) => { c.fillStyle = col; c.fillRect(0, 0, w, h); c.strokeStyle = '#fff'; c.lineWidth = 4; c.strokeRect(4, 4, w - 8, h - 8);
+    c.fillStyle = '#fff'; c.font = '800 20px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('GUIA', w / 2, 22); c.font = '800 15px "Baloo 2", sans-serif'; c.fillText(k.toUpperCase(), w / 2, 44); });
+  TX.calcSign = ctex(512, 96, (c, w, h) => { c.fillStyle = '#3a2a10'; c.fillRect(0, 0, w, h); c.strokeStyle = '#ffd56a'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.fillStyle = '#ffd56a'; c.font = '800 36px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('Calculadora Tributária', w / 2, h / 2 + 2); });
+  TX.taxDrop = ctex(64, 64, (c) => { c.fillStyle = '#d7263d'; c.beginPath(); c.arc(32, 32, 30, 0, Math.PI * 2); c.fill(); c.fillStyle = '#fff'; c.font = '800 40px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('%', 32, 35); });
+  const labWall = (draw) => ctex(256, 224, (c, w, h) => { c.fillStyle = '#2f4a3a'; c.fillRect(0, 0, w, h); c.fillStyle = '#5a4a3a'; c.fillRect(0, 150, w, 74); c.fillStyle = '#4a3a2a'; for (let x = 0; x < w; x += 42) c.fillRect(x, 150, 2, 74); c.fillStyle = '#ffd56a'; c.fillRect(0, 146, w, 5); draw(c, w, h); });
+  const arrowSign = (c, x, y, txt, dir, col) => { c.save(); c.translate(x, y); c.fillStyle = col; c.beginPath(); if (dir > 0) { c.moveTo(-60, -16); c.lineTo(40, -16); c.lineTo(62, 0); c.lineTo(40, 16); c.lineTo(-60, 16); } else { c.moveTo(60, -16); c.lineTo(-40, -16); c.lineTo(-62, 0); c.lineTo(-40, 16); c.lineTo(60, 16); } c.closePath(); c.fill();
+    c.fillStyle = '#fff'; c.font = '800 17px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, dir > 0 ? -8 : 8, 1); c.restore(); };
+  TX.labWall = [
+    labWall((c) => { c.fillStyle = '#6a4a2a'; c.fillRect(124, 20, 8, 126); arrowSign(c, 128, 40, 'ICMS', 1, '#d7263d'); arrowSign(c, 128, 78, 'ISS', -1, '#2e6bd0'); arrowSign(c, 128, 116, 'PIS/COFINS', 1, '#2e9a5a'); }),
+    labWall((c) => { c.fillStyle = '#f4ecd8'; c.fillRect(56, 18, 144, 116); c.strokeStyle = '#3a2a10'; c.lineWidth = 4; c.strokeRect(56, 18, 144, 116); c.fillStyle = '#3a2a10'; c.font = '800 15px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle';
+      c.fillText('VOCÊ ESTÁ AQUI', 128, 34); c.strokeStyle = '#8a6a1a'; c.lineWidth = 3; c.strokeRect(78, 50, 100, 72); c.beginPath(); c.moveTo(78, 74); c.lineTo(140, 74); c.moveTo(118, 98); c.lineTo(178, 98); c.stroke(); c.fillStyle = '#d7263d'; c.beginPath(); c.arc(92, 110, 6, 0, Math.PI * 2); c.fill(); }),
+    labWall((c) => { c.fillStyle = '#d7263d'; c.fillRect(60, 30, 136, 90); c.fillStyle = '#fff'; c.font = '800 16px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('IMPOSTO', 128, 52); c.fillText('SOBRE', 128, 74); c.fillText('IMPOSTO', 128, 96); }),
+    labWall((c) => { c.fillStyle = '#6a4a2a'; c.fillRect(124, 20, 8, 126); arrowSign(c, 128, 46, 'SAÍDA?', -1, '#8a6a1a'); arrowSign(c, 128, 92, 'SAÍDA?', 1, '#8a6a1a'); }),
+    labWall((c) => { c.fillStyle = '#f4ecd8'; c.fillRect(64, 24, 128, 110); c.fillStyle = '#2e6bd0'; c.fillRect(64, 24, 128, 26); c.fillStyle = '#fff'; c.font = '800 14px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('PARA ENTENDER', 128, 37);
+      c.fillStyle = '#3a2a10'; c.font = '700 12px "Baloo 2", sans-serif'; ['Lei 1', 'Decreto 2', 'Instrução 3', 'Portaria 4', 'Anexo 5...'].forEach((l, i) => c.fillText(l, 128, 62 + i * 15)); })
   ];
   TX.goldSeal = ctex(64, 64, (c) => { const g = c.createRadialGradient(26, 24, 4, 32, 32, 30); g.addColorStop(0, '#fff6b0'); g.addColorStop(0.6, '#f2b632'); g.addColorStop(1, '#b8780c'); c.fillStyle = g; c.beginPath(); c.arc(32, 32, 30, 0, Math.PI * 2); c.fill();
     c.fillStyle = '#8a5a0c'; c.beginPath(); for (let i = 0; i < 10; i++) { const a = -Math.PI / 2 + i * Math.PI / 5, r = i % 2 ? 8 : 18; c.lineTo(32 + Math.cos(a) * r, 33 + Math.sin(a) * r); } c.closePath(); c.fill(); });
@@ -2071,6 +2316,8 @@ function buildStatic(){
   MAT.crate = toon(0xffffff, { map: LV && LV.theme === 'market' ? TX.fruitCrate : pick(TX.offBox, TX.iceBlock, TX.crate) });
   if (LV && LV.theme === 'palace') { MAT.side = toon(0xffffff, { map: TX.palFloor }); MAT.curb = toon(0xffffff, { map: TX.palEdge }); MAT.brick = toon(0xffffff, { map: TX.palBase }); MAT.crate = toon(0xffffff, { map: TX.palBlock }); MAT.awn = toon(0xffffff, { map: TX.palRail }); }
   if (LV && LV.theme === 'roofs') { MAT.side = toon(0xffffff, { map: TX.roofTop }); MAT.curb = toon(0xffffff, { map: TX.roofEdge }); MAT.brick = new THREE.MeshLambertMaterial({ map: TX.roofBase, emissive: 0x3a2a20, emissiveIntensity: 0.25 }); MAT.crate = toon(0xffffff, { map: TX.roofBlock }); } MAT.awn = toon(0xffffff, { map: pick(TX.offShelf, TX.iceShelf, TX.awning) });
+  if (LV && LV.theme === 'porto') { MAT.side = toon(0xffffff, { map: TX.portFloor }); MAT.curb = toon(0xffffff, { map: TX.portEdge }); MAT.brick = toon(0xffffff, { map: TX.portBase }); MAT.crate = toon(0xffffff, { map: TX.contO }); MAT.awn = toon(0xffffff, { map: TX.portShelf }); }
+  if (LV && LV.theme === 'labirinto') { MAT.side = toon(0xffffff, { map: TX.labFloor }); MAT.curb = toon(0xffffff, { map: TX.labEdge }); MAT.brick = toon(0xffffff, { map: TX.labBase }); MAT.crate = toon(0xffffff, { map: TX.labBox }); MAT.awn = toon(0xffffff, { map: TX.labShelf }); }
   if (LV && LV.theme === 'fabrica') { MAT.side = toon(0xffffff, { map: TX.fabFloor }); MAT.curb = toon(0xffffff, { map: TX.fabEdge }); MAT.brick = toon(0xffffff, { map: TX.fabBase }); MAT.crate = toon(0xffffff, { map: TX.fabBox }); MAT.awn = toon(0xffffff, { map: TX.fabShelf }); }
   if (LV && LV.theme === 'cartorio') { MAT.side = toon(0xffffff, { map: TX.cartFloor }); MAT.curb = toon(0xffffff, { map: TX.cartEdge }); MAT.brick = toon(0xffffff, { map: TX.cartBase }); MAT.crate = toon(0xffffff, { map: TX.cartBox }); MAT.awn = toon(0xffffff, { map: TX.cartShelf }); }
   const D = 4;
@@ -2127,6 +2374,8 @@ function buildStatic(){
   if (LV && LV.theme === 'palace') { buildPalaceBack(); return; }
   if (LV && LV.theme === 'cartorio') { buildCartorioBack(); return; }
   if (LV && LV.theme === 'fabrica') { buildFabricaBack(); return; }
+  if (LV && LV.theme === 'labirinto') { buildLabBack(); return; }
+  if (LV && LV.theme === 'porto') { buildPortoBack(); return; }
   // prédios do fundo
   const R = rng(5), facades = [0xe08a64, 0xf0c66a, 0x84b2d6, 0xbccc76, 0xe4a0b2, 0xf2ead6, 0x96c8b0, 0xd8a070];
   const winMat = new THREE.MeshLambertMaterial({ map: TX.windows, transparent: true });
@@ -2198,6 +2447,43 @@ function buildOfficeBack(){
     else { mesh(new THREE.CylinderGeometry(0.28, 0.22, 0.5, 10), pot, x + 1, 0.25, -3.0, staticGroup); mesh(new THREE.IcosahedronGeometry(0.55, 0), leaf, x + 1, 0.95, -3.0, staticGroup); }
   }
   if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.bossSign }), 64, 7.6, wallZ + 0.05, staticGroup, false);
+}
+function buildPortoBack(){
+  const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24;
+  const mats = TX.portWall.map(t => new THREE.MeshLambertMaterial({ map: t }));
+  for (let x = W0, i = 0; x < W1; x += segW, i++) { if (LV.bossSign && x > 52 && x < 76) continue; mesh(new THREE.PlaneGeometry(segW, 7), mats[(i * 3) % mats.length], x + segW / 2, 2.5, wallZ, staticGroup, false); }
+  const roof = toon(0x8a8e96); mesh(new THREE.BoxGeometry(W1 - W0, 0.4, 1.2), roof, (W0 + W1) / 2, 6.1, wallZ + 0.3, staticGroup, false);
+  const fl = mesh(new THREE.PlaneGeometry(W1 - W0, 1.8), toon(0xffffff, { map: TX.portFloor }), (W0 + W1) / 2, -0.02, -2.8, staticGroup, false); fl.rotation.x = -Math.PI / 2;
+  // pilhas de contêineres ao fundo
+  const cm = [TX.contO, TX.contB, TX.contG, TX.contR].map(t => toon(0xffffff, { map: t }));
+  const cg = new THREE.BoxGeometry(5, 2.2, 2.2);
+  for (let x = W0, i = 0; x < W1; x += 6, i++) { const h = 2 + ((i * 7) % 4); for (let k = 0; k < h; k++) mesh(cg, cm[(i * 3 + k * 5) % 4], x, 6.4 + k * 2.2, -9 - (i % 2) * 2.5, staticGroup, false); }
+  // pórticos de guindaste
+  const steel = toon(0xd84a2a), dk = toon(0x3a3e48);
+  for (let x = 20; x < COLS; x += 70) { for (const dx of [-5, 5]) mesh(new THREE.BoxGeometry(0.6, 22, 0.6), steel, x + dx, 11, -14, staticGroup, false);
+    mesh(new THREE.BoxGeometry(18, 0.9, 0.9), steel, x + 3, 21.5, -14, staticGroup, false); mesh(new THREE.BoxGeometry(1.4, 1.2, 1.2), dk, x + 7, 20.5, -14, staticGroup, false);
+    mesh(new THREE.CylinderGeometry(0.05, 0.05, 6, 4), dk, x + 7, 17, -14, staticGroup, false); }
+  const cone = toon(0xf28c28);
+  for (let x = 8, i = 0; x < COLS - 4; x += 11, i++) { if (LV.bossSign && x > 50 && x < 76) continue; if (i % 3 === 0) mesh(new THREE.ConeGeometry(0.22, 0.6, 10), cone, x, 0.3, -3.0, staticGroup);
+    else if (i % 3 === 1) { mesh(new THREE.BoxGeometry(1.2, 0.15, 1.0), toon(0x9a6a3a), x, 0.08, -3.0, staticGroup); mesh(new THREE.BoxGeometry(1.0, 0.7, 0.8), toon(0xd8b080), x, 0.5, -3.0, staticGroup); } }
+  if (LV.bossSign) { mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.craneSign }), 64, 3.6, wallZ + 0.05, staticGroup, false);
+    mesh(new THREE.BoxGeometry(24, 0.7, 0.7), steel, 64, 12.9, -0.9, staticGroup, false); for (const x of [53, 75]) mesh(new THREE.BoxGeometry(0.6, 13, 0.6), steel, x, 6.5, -0.9, staticGroup, false); }
+}
+function buildLabBack(){
+  const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24, H = 20 + TOPX;
+  const lowMats = TX.labWall.map(t => new THREE.MeshLambertMaterial({ map: t }));
+  const hg = new THREE.PlaneGeometry(W1 - W0, H); const uv = hg.attributes.uv; for (let i = 0; i < uv.count; i++) uv.setXY(i, uv.getX(i) * (W1 - W0) / 4, uv.getY(i) * H / 4);
+  mesh(hg, new THREE.MeshLambertMaterial({ map: TX.labHigh }), (W0 + W1) / 2, -1 + H / 2, wallZ - 0.02, staticGroup, false);
+  for (let y = 0, f = 0; y < TOPX + 8; y += 7, f++) for (let x = W0, i = 0; x < W1; x += segW, i++) {
+    if (LV.bossSign && f === 0 && x > 52 && x < 76) continue;
+    mesh(new THREE.PlaneGeometry(segW, 7), lowMats[(i * 3 + f * 2) % lowMats.length], x + segW / 2, y + 2.5, wallZ, staticGroup, false);
+  }
+  const fl = mesh(new THREE.PlaneGeometry(W1 - W0, 1.8), toon(0xffffff, { map: TX.labFloor }), (W0 + W1) / 2, -0.02, -2.8, staticGroup, false); fl.rotation.x = -Math.PI / 2;
+  const hedge = toon(0x3f6e4a, { flatShading: true }), pot = toon(0xb86a3a);
+  for (let x = 6, i = 0; x < COLS - 4; x += 9, i++) { if (LV.bossSign && x > 50 && x < 76) continue;
+    if (i % 2) mesh(new THREE.BoxGeometry(2.2, 1.2, 0.8), hedge, x, 0.6, -3.0, staticGroup);
+    else { mesh(new THREE.CylinderGeometry(0.3, 0.24, 0.5, 10), pot, x, 0.25, -3.0, staticGroup); mesh(new THREE.IcosahedronGeometry(0.5, 0), hedge, x, 0.9, -3.0, staticGroup); } }
+  if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.calcSign }), 64, 7.6, wallZ + 0.05, staticGroup, false);
 }
 function buildFabricaBack(){
   const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24, H = 22;
@@ -2625,6 +2911,33 @@ function buildBoss(){
   const ze = makeCarimbo(body);
   return { g, body, forks, ze, wheels };
 }
+function buildCrane(){
+  const g = new THREE.Group(); scene.add(g); const steel = toon(0xd84a2a), dk = toon(0x2a2a30), yel = toon(0xf2c14e);
+  const claw = new THREE.Group(); claw.scale.setScalar(0.78); g.add(claw);
+  mesh(new THREE.BoxGeometry(2.2, 0.7, 1.3), yel, 0, 2.15, 0, claw); mesh(new THREE.BoxGeometry(2.3, 0.18, 1.35), dk, 0, 2.5, 0, claw, false);
+  const eyes = []; for (const x of [-0.45, 0.45]) { mesh(new THREE.SphereGeometry(0.2, 10, 8), toon(0xffffff), x, 2.15, 0.62, claw, false); eyes.push(mesh(new THREE.SphereGeometry(0.09, 8, 6), toon(0x1a0b12), x, 2.12, 0.78, claw, false)); }
+  const fingers = [-1, 1].map(sd => { const f = new THREE.Group(); f.position.set(sd * 0.85, 1.8, 0); claw.add(f); mesh(new THREE.BoxGeometry(0.28, 1.6, 0.9), steel, 0, -0.8, 0, f); mesh(new THREE.BoxGeometry(0.6, 0.28, 0.9), steel, -sd * 0.18, -1.55, 0, f); return f; });
+  const cab = mesh(new THREE.CylinderGeometry(0.07, 0.07, 1, 6), dk, 0, 3, 0, g, false);
+  const trol = new THREE.Group(); g.add(trol); mesh(new THREE.BoxGeometry(1.6, 0.8, 1.2), steel, 0, 0, 0, trol); for (const x of [-0.5, 0.5]) mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.3, 10), dk, x, 0.45, 0, trol, false).rotation.x = Math.PI / 2;
+  return { g, claw, fingers, cab, trol, eyes };
+}
+function buildCalc(){
+  const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
+  const shell = toon(0xe8e2d0), dark = toon(0x3a3a44), blk = toon(0x1a0b12);
+  for (const x of [-0.6, 0.6]) { mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 8), dark, x, 0.45, 0, body); mesh(new THREE.BoxGeometry(0.5, 0.16, 0.6), blk, x + 0.08, 0.08, 0, body); }
+  const torso = new THREE.Group(); torso.position.y = 0.9; body.add(torso);
+  mesh(new THREE.BoxGeometry(2.4, 2.8, 1.1), shell, 0, 1.4, 0, torso);
+  const cv = document.createElement('canvas'); cv.width = 256; cv.height = 96; const tex = new THREE.CanvasTexture(cv);
+  mesh(new THREE.BoxGeometry(2.0, 0.8, 0.1), toon(0x5a6a50), 0, 2.3, 0.56, torso, false);
+  mesh(new THREE.PlaneGeometry(1.85, 0.66), new THREE.MeshBasicMaterial({ map: tex }), 0, 2.3, 0.62, torso, false);
+  const cols = [0xd7263d, 0x3a3a44, 0x3a3a44, 0x2e6bd0];
+  for (let r = 0; r < 4; r++) for (let q = 0; q < 4; q++) mesh(new THREE.BoxGeometry(0.38, 0.28, 0.12), toon(q === 3 ? 0xf28c28 : r === 0 && q === 0 ? 0xd7263d : 0x5a5a64), -0.75 + q * 0.5, 1.45 - r * 0.36, 0.6, torso, false);
+  for (const z of [-0.18, 0.18]) mesh(new THREE.SphereGeometry(0.13, 10, 8), toon(0xffffff), z * 2.6, 3.0, 0.5, torso, false);
+  const arms = [-1, 1].map(sd => { const a = new THREE.Group(); a.position.set(sd * 1.25, 2.2, 0); torso.add(a); mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8), dark, 0, -0.5, 0, a); mesh(new THREE.SphereGeometry(0.16, 8, 6), toon(0xe0a882), 0, -1.05, 0, a); return a; });
+  return { g, body, torso, arms, cv, tex, last: '' };
+}
+function drawCalc(o, txt, col){ const key = txt + col; if (o.last === key) return; o.last = key; const c = o.cv.getContext('2d'); c.fillStyle = '#b8c8a0'; c.fillRect(0, 0, 256, 96);
+  c.fillStyle = col; c.font = '800 46px "Baloo 2", monospace'; c.textAlign = 'right'; c.textBaseline = 'middle'; c.fillText(txt, 240, 52); o.tex.needsUpdate = true; }
 function buildMaquina(){
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
   const green = toon(0x5a7a6a), dark = toon(0x3a4a42), steel = toon(0x8a9098), yel = toon(0xf2c230);
@@ -2709,8 +3022,13 @@ function buildDynamic(){
     mesh(new THREE.CylinderGeometry(0.06, 0.08, 2, 8), toon(0x5a6070), 0, 1, -0.6, g);
     const lamp = mesh(new THREE.SphereGeometry(0.22, 12, 10), new THREE.MeshBasicMaterial({ color: 0x8a8f9a }), 0, 2.15, -0.6, g); return lamp; });
   V.plats = plats.map(m => { const g = add(new THREE.Group()); scene.add(g);
-    mesh(new THREE.BoxGeometry(3, 0.35, 1.6), toon(0xffffff, { map: LV.theme === 'office' ? TX.lift : LV.theme === 'roofs' ? TX.scaffold : LV.theme === 'palace' ? TX.palBlock : LV.theme === 'cartorio' ? TX.cartBox : LV.theme === 'fabrica' ? TX.fabShelf : TX.crate }), 1.5, -0.175, 0, g);
-    for (const x of [0.4, 2.6]) mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 6), toon(0x6b6f7a), x, -0.8, 0, g, false);
+    mesh(new THREE.BoxGeometry(3, 0.35, 1.6), toon(0xffffff, { map: LV.theme === 'office' ? TX.lift : LV.theme === 'roofs' ? TX.scaffold : LV.theme === 'palace' ? TX.palBlock : LV.theme === 'cartorio' ? TX.cartBox : LV.theme === 'fabrica' ? TX.fabShelf : LV.theme === 'labirinto' ? TX.labBox : LV.theme === 'porto' ? TX.portShelf : TX.crate }), 1.5, -0.175, 0, g);
+    if (m.crane) { g.children[0].visible = false; const cm = [TX.contO, TX.contB, TX.contG, TX.contR];
+      mesh(new THREE.BoxGeometry(3, 1, 1.5), toon(0xffffff, { map: cm[plats.indexOf(m) % 4] }), 1.5, -0.5, 0, g);
+      const cab = mesh(new THREE.CylinderGeometry(0.05, 0.05, 1, 5), toon(0x2a2a30), 1.5, 0.5, 0, g, false); g.userData.cab = cab;
+      for (const x of [0.4, 2.6]) mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.9, 4), toon(0x2a2a30), x + (1.5 - x) * 0.5, 0.35, 0, g, false).rotation.z = (x < 1.5 ? -1 : 1) * 1.0;
+      mesh(new THREE.TorusGeometry(0.16, 0.05, 6, 10), toon(0xf2c14e), 1.5, 0.85, 0, g, false);
+    } else for (const x of [0.4, 2.6]) mesh(new THREE.CylinderGeometry(0.04, 0.04, 0.9, 6), toon(0x6b6f7a), x, -0.8, 0, g, false);
     return g; });
   if (selo) { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(selo.x), WY(selo.y), 0);
     mesh(new THREE.BoxGeometry(0.66, 0.88, 0.05), [toon(0xfffaf0), toon(0xfffaf0), toon(0xfffaf0), toon(0xfffaf0), new THREE.MeshBasicMaterial({ map: TX.docs[LV.zone] }), new THREE.MeshBasicMaterial({ map: TX.docs[LV.zone] })], 0, 0, 0, g);
@@ -2732,9 +3050,9 @@ function buildDynamic(){
     const ticket = mesh(new THREE.BoxGeometry(0.3, 0.02, 0.2), toon(0xfffaf0), 0, 1.0, 0.3, g, false); ticket.visible = false;
     return { g, light, ticket }; });
   V.doors = doors.map(d => { const g = add(new THREE.Group()); scene.add(g); const h = d.ty1 - d.ty0;
-    mesh(new THREE.BoxGeometry(0.9, h, 1.5), toon(0x6a7a90), 0, h / 2, 0, g);
-    for (let k = 1; k < h; k += 2) mesh(new THREE.BoxGeometry(0.92, 0.06, 1.52), toon(0x56647a), 0, k, 0, g, false);
-    mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: TX.doorSign }), 0, 1.5, 0.76, g, false).rotation.y = 0;
+    mesh(new THREE.BoxGeometry(0.9, h, 1.5), toon(d.key ? KEYCOL[d.key] : 0x6a7a90), 0, h / 2, 0, g);
+    for (let k = 1; k < h; k += 2) mesh(new THREE.BoxGeometry(0.92, 0.06, 1.52), toon(d.key ? 0x2a2a30 : 0x56647a), 0, k, 0, g, false);
+    mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: d.key ? TX.guiaSign[d.key] : TX.doorSign }), 0, 1.5, 0.76, g, false).rotation.y = 0;
     g.position.set(d.tx + 0.5, 13 - d.ty1, 0); g.userData.base = 13 - d.ty1; g.userData.h = h; return g; });
   V.cubes = cubes.map(cb => add(mesh(new THREE.BoxGeometry(0.98, 0.98, 1.3), new THREE.MeshToonMaterial({ color: 0xbfe8ff, gradientMap: gm, transparent: true, opacity: 0.85 }), cb.tx + 0.5, 13 - cb.ty - 0.5, 0)));
   V.vents = vents.map(vt => { const g = add(new THREE.Group()); scene.add(g); const cx = (vt.x0 + vt.x1) / 2 / T; g.position.set(cx, 6.2, -1.6);
@@ -2775,6 +3093,29 @@ function buildDynamic(){
     for (let i = 0; i < gd.n; i++) { const a = -(i * Math.PI * 2 / gd.n), arm = mesh(new THREE.BoxGeometry(R, 0.22, 0.2), dark, Math.cos(a) * R / 2, Math.sin(a) * R / 2, 0.1, g, false); arm.rotation.z = a; }
     const hub = mesh(new THREE.CylinderGeometry(0.4, 0.4, 0.5, 12), toon(0xf2c230), 0, 0, 0.1, g, false); hub.rotation.x = Math.PI / 2;
     return g; });
+  V.guias = guias.map(k => { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(k.x), WY(k.y), 0);
+    mesh(new THREE.BoxGeometry(0.72, 0.46, 0.05), toon(KEYCOL[k.color]), 0, 0, 0, g, false);
+    mesh(new THREE.PlaneGeometry(0.6, 0.36), new THREE.MeshBasicMaterial({ map: TX.boleto }), 0, 0, 0.03, g, false);
+    const l = new THREE.PointLight(KEYCOL[k.color], 0.8, 3); g.add(l); return g; });
+  const dropMat = new THREE.MeshBasicMaterial({ map: TX.taxDrop, transparent: true });
+  const SCAN = LV.theme === 'porto';
+  V.cascades = cascades.map(c => { const g = add(new THREE.Group()); scene.add(g); const H = c.ty1 - c.ty0, top = 13 - c.ty0;
+    const fun = SCAN ? mesh(new THREE.BoxGeometry(1.3, 0.5, 1.4), toon(0x3a4a5a), WX(c.x), top + 0.2, 0, g, false) : mesh(new THREE.CylinderGeometry(0.7, 0.25, 0.6, 12), toon(0x8a6a1a), WX(c.x), top + 0.2, 0, g, false);
+    const lamp = mesh(new THREE.SphereGeometry(0.14, 8, 6), new THREE.MeshBasicMaterial({ color: 0x5a3a1a }), WX(c.x), top + 0.62, 0, g, false);
+    const drops = []; for (let k = 0; k < 7; k++) { const d = mesh(GEO.taxD || (GEO.taxD = new THREE.PlaneGeometry(0.42, 0.42)), dropMat, WX(c.x) + (k % 3 - 1) * 0.18, top, 0.3, g, false); drops.push(d); }
+    const col = mesh(new THREE.CylinderGeometry(0.42, 0.42, H, 10, 1, true), new THREE.MeshBasicMaterial({ color: SCAN ? 0x40e0ff : 0xd7263d, transparent: true, opacity: SCAN ? 0.32 : 0.18, side: THREE.DoubleSide }), WX(c.x), top - H / 2, 0, g, false);
+    return { g, lamp, drops, col, H, top, scan: SCAN }; });
+  V.hgs = hourglasses.map(h => { const g = add(new THREE.Group()); scene.add(g); g.position.set(WX(h.x), WY(h.y), 0);
+    const glass = new THREE.MeshToonMaterial({ color: 0xbfe8ff, gradientMap: gm, transparent: true, opacity: 0.6 }), wood = toon(0x8a5a2e), sand = toon(0xf2c14e);
+    mesh(new THREE.ConeGeometry(0.22, 0.3, 12), glass, 0, 0.15, 0, g, false).rotation.x = Math.PI; mesh(new THREE.ConeGeometry(0.22, 0.3, 12), glass, 0, -0.15, 0, g, false);
+    mesh(new THREE.ConeGeometry(0.14, 0.16, 10), sand, 0, -0.2, 0, g, false);
+    for (const y of [0.32, -0.32]) mesh(new THREE.CylinderGeometry(0.28, 0.28, 0.06, 12), wood, 0, y, 0, g, false);
+    return g; });
+  V.gates = gates.map(gt => { const g = add(new THREE.Group()); scene.add(g); const h = gt.ty1 - gt.ty0; g.position.set(WX(gt.tx * T + 8), WY(gt.ty1 * T), 0);
+    const bar = new THREE.Group(); g.add(bar); mesh(new THREE.BoxGeometry(0.8, h, 1.3), toon(0xffffff, { map: TX.gateStripe }), 0, h / 2, 0, bar);
+    for (const z of [-0.8, 0.8]) mesh(new THREE.BoxGeometry(0.3, h + 0.6, 0.3), toon(0x3a3e48), 0, (h + 0.6) / 2, z, g);
+    const lamp = mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0x3fdf6a }), 0, h + 0.75, 0.8, g, false);
+    return { g, bar, lamp }; });
   V.chase = null;
   if (LV.chase) { const g = add(new THREE.Group()); scene.add(g); const pm = toon(0xffffff, { map: TX.prazo });
     mesh(new THREE.BoxGeometry(4, 18, 3.4), pm, -2, 7.5, 0, g);
@@ -2787,7 +3128,7 @@ function buildDynamic(){
   V.boss = null; V.gate = null; V.crates = []; V.npc = null;
   if (npc) { V.npc = add(buildZe()); V.npc.position.set(WX(npc.x), WY(npc.y), -0.9); V.npc.rotation.y = -0.5; V.npc.scale.x = -1; }
   if (boss) {
-    V.boss = boss.kind === 'maquina' ? buildMaquina() : boss.kind === 'tabeliao' ? buildTabeliao() : boss.kind === 'panel' ? buildPanel() : boss.kind === 'freezer' ? buildFreezer() : boss.kind === 'truck' ? buildTruck() : boss.kind === 'balloon' ? buildBalloon() : boss.kind === 'monster' ? buildMonster() : buildBoss(); add(V.boss.g); if (V.boss.stamp) { add(V.boss.stamp); add(V.boss.wv); }
+    V.boss = boss.kind === 'crane' ? buildCrane() : boss.kind === 'calc' ? buildCalc() : boss.kind === 'maquina' ? buildMaquina() : boss.kind === 'tabeliao' ? buildTabeliao() : boss.kind === 'panel' ? buildPanel() : boss.kind === 'freezer' ? buildFreezer() : boss.kind === 'truck' ? buildTruck() : boss.kind === 'balloon' ? buildBalloon() : boss.kind === 'monster' ? buildMonster() : buildBoss(); add(V.boss.g); if (V.boss.stamp) { add(V.boss.stamp); add(V.boss.wv); }
     const gate = add(new THREE.Group()); scene.add(gate);
     for (let i = 0; i < 9; i++) mesh(new THREE.BoxGeometry(1, 1, 1.4), MAT.crate, boss.a0 - 0.5, 0.5 + i, 0, gate);
     V.gate = gate;
@@ -2850,7 +3191,7 @@ function syncDynamic(){
   });
   springs.forEach((s, i) => { const v = V.springs[i], c = s.comp > 0 ? 0.35 : 1; v.coil.scale.y = c; v.plate.position.y = 0.18 + 0.3 * c; });
   checks.forEach((k, i) => V.checks[i].material.color.setHex(k.on ? (t % 20 < 10 ? 0xffd23f : 0xfff2a0) : 0x8a8f9a));
-  plats.forEach((m, i) => V.plats[i].position.set(WX(m.x), WY(m.y), 0));
+  plats.forEach((m, i) => { const g = V.plats[i]; g.position.set(WX(m.x), WY(m.y), 0); const cab = g.userData.cab; if (cab) { const L = Math.max(1, 13 + TOPX + 3 - WY(m.y)); cab.scale.y = L; cab.position.y = 0.6 + L / 2; } });
   if (V.selo) { V.selo.visible = !selo.got; V.selo.rotation.y = t * 0.05; V.selo.position.y = WY(selo.y) + Math.sin(t * 0.08) * 0.12; }
   if (V.goal) {
     if (!goal.done) V.goal.rotation.y = 0;
@@ -2870,6 +3211,12 @@ function syncDynamic(){
     else { o.box.visible = true; o.sh.visible = d.state === 'fall'; o.box.position.set(WX(d.x), WY(d.y), 0); if (d.state === 'fall') o.sh.position.set(WX(d.x), WY(d.land) + 0.03, 0.2); } });
   while (V.shots && V.shots.length < shots.length) { const g = new THREE.Group(); mesh(GEO.shotB || (GEO.shotB = new THREE.BoxGeometry(0.4, 0.22, 0.4)), MAT.shotR || (MAT.shotR = toon(0xd7263d)), 0, 0, 0, g); mesh(GEO.shotH || (GEO.shotH = new THREE.CylinderGeometry(0.06, 0.06, 0.26, 6)), MAT.shotW || (MAT.shotW = toon(0x6b3f15)), 0, 0.22, 0, g); scene.add(g); V.shots.push(g); V.all.push(g); }
   if (V.shots) V.shots.forEach((g, i) => { const sh = shots[i]; g.visible = !!sh && sh.alive; if (sh) { g.position.set(WX(sh.x), WY(sh.y), 0); g.rotation.z = -sh.x * 0.05; } });
+  if (V.gates) gates.forEach((gt, i) => { const o = V.gates[i]; gt.lift += ((gt.closed ? 0 : 1) - gt.lift) * 0.25; o.bar.scale.y = Math.max(0.03, 1 - gt.lift); o.bar.visible = gt.lift < 0.97;
+    o.lamp.material.color.setHex(gt.closed ? 0xff3d3d : gt.warn ? (t % 8 < 4 ? 0xffd23f : 0x6a5a10) : 0x3fdf6a); });
+  if (V.guias) guias.forEach((k, i) => { const g = V.guias[i]; g.visible = !k.got; g.rotation.y = Math.sin(t * 0.05 + i) * 0.6; g.position.y = WY(k.y) + Math.sin(t * 0.08 + i) * 0.1; });
+  if (V.cascades) cascades.forEach((c, i) => { const o = V.cascades[i]; o.lamp.material.color.setHex(c.active ? 0xff3d3d : c.warn ? (t % 8 < 4 ? 0xffd23f : 0x5a3a1a) : 0x5a3a1a); o.col.visible = c.active || (o.scan && c.warn && t % 10 < 3);
+    o.drops.forEach((d, k) => { d.visible = !o.scan && (c.active || (c.warn && k === 0)); const f = ((t * (c.active ? 0.035 : 0.01) + k / 7) % 1); d.position.y = o.top - f * o.H; d.rotation.z = t * 0.1 + k; }); });
+  if (V.hgs) hourglasses.forEach((h, i) => { const g = V.hgs[i]; g.visible = !h.got; g.rotation.z = Math.sin(t * 0.06 + i) * 0.3; g.position.y = WY(h.y) + Math.sin(t * 0.08 + i) * 0.1; });
   if (V.clocks) clocks.forEach((ck, i) => { const o = V.clocks[i]; o.lamp.material.color.setHex(ck.cd > 0 ? 0xd7263d : (t % 30 < 15 ? 0x3fdf6a : 0x1f8a3a)); o.hand.rotation.z = G.freeze > 0 ? 0 : -t * 0.05; });
   if (V.gears) gearsDeco.forEach((gd, i) => { const m = plats[gd.first]; if (m) V.gears[i].rotation.z = -(m.t); });
   if (V.chase && LV.chase) { V.chase.position.set(WX(LV.chase.x) + (G.freeze > 0 ? 0 : (Math.random() - 0.5) * 0.06), 0, 0); V.chase.children.forEach((c, k) => { if (k > 0 && k < 7 && !(G.freeze > 0)) c.rotation.y -= 0.2; }); }
@@ -2884,7 +3231,19 @@ function syncDynamic(){
     const b = boss, o = V.boss;
     o.g.position.set(WX(b.x), WY(b.y), 0); o.g.scale.x = b.dir;
     o.g.visible = b.state !== 'idle' && !(b.inv > 0 && t % 6 < 3);
-    if (b.kind === 'maquina') {
+    if (b.kind === 'crane') {
+      o.g.scale.x = 1; const st = b.state, beamY = 12.5 - WY(b.y);
+      o.trol.position.y = beamY; o.cab.scale.y = Math.max(0.1, beamY - 2.0); o.cab.position.y = 2.0 + (beamY - 2.0) / 2;
+      const open = st === 'aim' ? 0.5 : st === 'slam' ? 0.6 : st === 'stuck' ? 0.05 : 0.2;
+      o.fingers.forEach((f, i) => f.rotation.z += ((i ? 1 : -1) * open - f.rotation.z) * 0.2);
+      o.claw.rotation.z = st === 'stuck' ? Math.sin(t * 0.6) * 0.06 : st === 'aim' ? Math.sin(t * 0.9) * 0.08 : st === 'dead' ? Math.min(0.8, b.t / 60) : 0;
+      o.eyes.forEach(e => { e.position.x = (e.position.x > 0 ? 0.45 : -0.45) + Math.max(-0.08, Math.min(0.08, (P.x - b.x) / 300)); });
+    } else if (b.kind === 'calc') {
+      o.g.scale.x = 1; const st = b.state;
+      o.torso.scale.y = st === 'calc' ? 0.82 : 1; o.torso.rotation.z = st === 'dead' ? -Math.min(1.3, b.t / 60) : st === 'walk' ? Math.sin(t * 0.25) * 0.04 : 0;
+      o.arms.forEach((a, i) => { a.rotation.z = (i ? -1 : 1) * ((b.arm || 0) * 2.6 + (st === 'walk' ? Math.sin(t * 0.25 + i * Math.PI) * 0.3 : 0.2)); });
+      drawCalc(o, st === 'dead' ? '0,00' : b.inv > 0 ? 'ERRO' : st === 'calc' ? (t % 30 < 15 ? 'CALC...' : '') : st === 'cascata' ? '% % %' : '1.501 h', st === 'calc' ? '#2a3a20' : '#1a2a10');
+    } else if (b.kind === 'maquina') {
       const fz = b.state === 'frozen'; o.g.scale.x = 1;
       o.eyesM.forEach(m => m.material.color.setHex(fz ? 0x8fd3ff : (t % 20 < 10 || b.state === 'charge' ? 0xff3d3d : 0xb81c30)));
       if (!fz && b.state !== 'dead') o.gearsM.forEach((gg, i) => gg.rotation.z += (i ? -0.12 : 0.08) * (b.state === 'charge' ? 2 : 1));
@@ -2951,10 +3310,10 @@ function syncDynamic(){
     if (V.gate) V.gate.visible = !!G.lock;
     while (V.crates.length < b.crates.length) { const m = new THREE.Mesh(GEO.paperStack || (GEO.paperStack = new THREE.BoxGeometry(0.8, 0.5, 0.7)), MAT.paper || (MAT.paper = toon(0xffffff, { map: TX.paper }))); m.castShadow = true; scene.add(m); V.crates.push(m); V.all.push(m); }
     V.crates.forEach((m, i) => { const c = b.crates[i]; m.visible = !!c && c.alive; if (!c) return; m.position.set(WX(c.x), WY(c.y), 0); m.rotation.x = 0; m.rotation.y = 0; m.rotation.z = c.rot;
-      const k = c.kind; m.geometry = k === 'gearRoll' ? (GEO.gearRoll || (GEO.gearRoll = new THREE.CylinderGeometry(0.55, 0.55, 0.4, 10))) : k === 'tomato' ? (GEO.tomato || (GEO.tomato = new THREE.SphereGeometry(0.26, 12, 10))) : GEO.paperStack;
+      const k = c.kind; m.geometry = k === 'gearRoll' ? (GEO.gearRoll || (GEO.gearRoll = new THREE.CylinderGeometry(0.55, 0.55, 0.4, 10))) : k === 'tomato' ? (GEO.tomato || (GEO.tomato = new THREE.SphereGeometry(0.26, 12, 10))) : k === 'cont' ? (GEO.cont || (GEO.cont = new THREE.BoxGeometry(1.5, 0.95, 1.0))) : GEO.paperStack;
       if (k === 'gearRoll') m.rotation.set(Math.PI / 2, c.rot, 0, 'ZXY');
       if (k === 'gearRoll') m.scale.set(1, 1, 1); else if (k === 'ticket' || k === 'boleto') m.scale.set(0.6, 0.08, 0.5); else if (k === 'ice') m.scale.set(0.8, 1.3, 0.9); else m.scale.set(1, 1, 1);
-      m.material = k === 'gearRoll' ? (MAT.gearRoll || (MAT.gearRoll = toon(0x9aa4b0))) : k === 'ice' ? (MAT.iceCube || (MAT.iceCube = new THREE.MeshToonMaterial({ color: 0xbfe8ff, gradientMap: gm, transparent: true, opacity: 0.85 }))) : k === 'tomato' ? (MAT.tomato || (MAT.tomato = toon(0xd7263d))) : k === 'boleto' ? (MAT.boleto || (MAT.boleto = toon(0xffffff, { map: TX.boleto }))) : MAT.paper; });
+      m.material = k === 'cont' ? (MAT.contBox || (MAT.contBox = toon(0xffffff, { map: TX.contB }))) : k === 'gearRoll' ? (MAT.gearRoll || (MAT.gearRoll = toon(0x9aa4b0))) : k === 'ice' ? (MAT.iceCube || (MAT.iceCube = new THREE.MeshToonMaterial({ color: 0xbfe8ff, gradientMap: gm, transparent: true, opacity: 0.85 }))) : k === 'tomato' ? (MAT.tomato || (MAT.tomato = toon(0xd7263d))) : k === 'boleto' ? (MAT.boleto || (MAT.boleto = toon(0xffffff, { map: TX.boleto }))) : MAT.paper; });
   }
 }
 function syncHero(){
@@ -3006,6 +3365,8 @@ function updateCamera(snap){
     if (G.lock && boss && boss.kind === 'monster') ty = Math.max(ty, 3.4);
     if (G.lock && boss && boss.kind === 'tabeliao') ty = Math.max(ty, 3.6);
     if (G.lock && boss && boss.kind === 'maquina') ty = Math.max(ty, 3.2);
+    if (G.lock && boss && boss.kind === 'calc') ty = Math.max(ty, 3.2);
+    if (G.lock && boss && boss.kind === 'crane') ty = Math.max(ty, 5);
   }
   tx = Math.max(6, Math.min(COLS - 11, tx));
   if (snap) { cam.x = tx; cam.y = ty; }
@@ -3018,19 +3379,21 @@ function updateCamera(snap){
 /* ---------- HUD ---------- */
 let hudCache = '';
 function updHUD(){
-  const secs = Math.floor(G.frames / 60), tm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  const cdm = LV && LV.countdown, secs = cdm ? Math.ceil((G.cd || 0) / 60) : Math.floor(G.frames / 60), tm = `${Math.floor(secs / 60)}:${String(secs % 60).padStart(2, '0')}`;
+  const kh = G.keyRun ? Object.keys(G.keyRun).join(',') : '';
   const warn = G.ringsN === 0 && G.t % 40 < 20;
   const bh = G.lock && boss && boss.state !== 'dead' ? boss.hp : -1;
   const gn = golds.filter(g => g.got).length, fz = G.freeze > 0 ? Math.ceil(G.freeze / 60) : 0;
   $('frz').classList.toggle('hidden', !fz || G.state !== 'play'); if (fz) $('frz').textContent = '⏸ Máquinas paradas: ' + fz;
-  const key = `${G.score}|${tm}|${G.ringsN}|${G.lives}|${warn}|${selo && selo.got}|${bh}|${gn}|${golds.length}|${fz}`;
+  const key = `${G.score}|${tm}|${G.ringsN}|${G.lives}|${warn}|${selo && selo.got}|${bh}|${gn}|${golds.length}|${fz}|${kh}|${cdm ? 1 : 0}`;
   if (key === hudCache) return; hudCache = key;
-  $('hScore').textContent = G.score; $('hTime').textContent = tm; $('hRings').textContent = G.ringsN;
+  $('hScore').textContent = G.score; $('hTime').textContent = tm; $('hTimeK').textContent = cdm ? 'Prazo' : 'Tempo'; $('hTime').classList.toggle('warnT', !!cdm && secs <= 20);
+  $('keysHud').innerHTML = kh ? kh.split(',').map(c => `<i style="background:${KEYCSS[c]}"></i>`).join('') : ''; $('keysHud').classList.toggle('hidden', !kh); $('hRings').textContent = G.ringsN;
   $('hRingK').classList.toggle('warn', warn); $('hLives').textContent = '×' + G.lives;
   $('hGoldK').classList.toggle('hidden', !golds.length); $('hGold').classList.toggle('hidden', !golds.length); $('hGold').textContent = gn + '/' + golds.length; $('lives').classList.toggle('low', golds.length > 0);
   $('seloHud').classList.toggle('hidden', !(LV && G.docs[LV.zone]) || G.state === 'title');
   $('bossHud').classList.toggle('hidden', bh < 0);
-  if (bh >= 0) $('bossName').textContent = boss.kind === 'tabeliao' ? 'Tabelião' : boss.kind === 'maquina' ? 'Máquina' : 'Dr. Carimbo';
+  if (bh >= 0) $('bossName').textContent = boss.kind === 'tabeliao' ? 'Tabelião' : boss.kind === 'maquina' ? 'Máquina' : boss.kind === 'calc' ? 'Calculadora' : boss.kind === 'crane' ? 'Guindaste' : 'Dr. Carimbo';
   if (bh >= 0) $('bossPips').innerHTML = Array.from({ length: (boss && boss.maxHp) || 6 }, (_, i) => `<i class="${i < bh ? '' : 'off'}"></i>`).join(' ');
 }
 
@@ -3043,6 +3406,7 @@ function step(){
   if (G.state === 'card') { if (++G.cardT >= 120) G.state = 'play'; updateWorld(); syncDynamic(); updParts(); jPrev = inp.j; return; }
   updatePlayer(); updateWorld();
   if (P.state === 'play') G.frames++;
+  if (LV && LV.countdown && G.state === 'play' && P.state === 'play') { G.cd--; if (G.cd % 60 === 0 && G.cd <= 15 * 60 && G.cd > 0) beep(1200, 0.05, 'square', 0.05); if (G.cd <= 0) { G.cd = 0; pop(P.x, P.y - 50, 'O prazo acabou!', 100, 0.3); die(); } }
   if (P.state === 'goal') { G.goalT++; if (G.goalT === 150) sfx('check'); if (G.goalT >= 210) finish(); }
   syncDynamic(); updParts();
   jPrev = inp.j;
@@ -3059,6 +3423,10 @@ function confetti(){
   setTimeout(() => box.remove(), 9000);
 }
 const NOTES = {
+  10: { found: 'Você achou a Licença de Importação no alto do pátio!', hint: 'Tem um documento escondido nesta fase: a Licença de Importação. Dica: procure lá no alto, depois da mola perto do meio da fase.', act2: 'Agora vem o Ato 3: o Guindaste da Alfândega.',
+       winGot: 'Você venceu o Guindaste e a cerveja importada chegou à Adega!', winMiss: 'Você venceu o Guindaste! Faltou a Licença de Importação: ela está no alto do pátio, no Ato 1 desta zona.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
+  9: { found: 'Você achou a Nota Fiscal no alto do labirinto!', hint: 'Tem um documento escondido nesta fase: a Nota Fiscal. Dica: procure no andar mais alto do labirinto.', act2: 'Agora vem o Ato 3: a Calculadora Tributária.',
+       winGot: 'Você travou a Calculadora e a Adega já emite Nota Fiscal!', winMiss: 'Você travou a Calculadora! Faltou a Nota Fiscal: ela está no andar mais alto do Ato 1 desta zona.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
   8: { found: 'Você achou o Registro do Funcionário no alto da fábrica!', hint: 'Tem um documento escondido nesta fase: o Registro do Funcionário. Dica: procure lá no alto, depois da segunda roda gigante.', act2: 'Agora vem o Ato 3: a Máquina da Folha.',
        winGot: 'Você parou a Máquina da Folha e o funcionário da Adega está registrado!', winMiss: 'Você parou a Máquina da Folha! Faltou o Registro do Funcionário: ele está no alto, depois da segunda roda gigante do Ato 1.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
   7: { found: 'Você achou o Contrato Social no alto das prateleiras!', hint: 'Tem um documento escondido nesta fase: o Contrato Social. Dica: procure lá no alto.', act2: 'Agora vem o Ato 3: o Tabelião Autenticador.',
@@ -3077,6 +3445,10 @@ const NOTES = {
        winGot: '', winMiss: '', next: '' }
 };
 const EDU = {
+  10: { title: 'Importar não é só comprar lá fora',
+        text: 'Para importar, a empresa precisa primeiro se habilitar no sistema de comércio exterior (o chamado Radar). Na chegada, a carga paga vários tributos em sequência: Imposto de Importação, IPI, PIS e Cofins-Importação e ICMS, um calculado em cima do outro, além de frete, seguro e armazenagem. Depois, cada declaração cai num canal: no verde a liberação é automática; no amarelo conferem os documentos; no vermelho conferem os documentos e abrem a carga; no cinza há um controle especial contra fraude. Por isso, muita pequena empresa contrata um despachante aduaneiro.' },
+  9: { title: 'O labirinto dos impostos',
+       text: 'Segundo o Banco Mundial (relatório Doing Business Subnacional, 2021), uma empresa brasileira gasta cerca de 1.500 horas por ano só para calcular e pagar impostos, mais que em qualquer outro país e quase dez vezes a média dos países ricos. Para simplificar, a Reforma Tributária troca cinco tributos (PIS, Cofins, IPI, ICMS e ISS) por dois (CBS e IBS), numa transição que vai de 2026 a 2033. E ela cria o Imposto Seletivo, que vai incidir sobre produtos como bebidas alcoólicas. Para o pequeno negócio, o Simples Nacional já junta vários impostos numa guia só, o DAS.' },
   8: { title: 'Contratar o primeiro funcionário',
        text: 'Registrar o funcionário em carteira é obrigatório, e hoje tudo é digital: a contratação é informada ao governo pelo eSocial. Além do salário, a empresa deposita o FGTS (8% por mês), guarda dinheiro para o 13º salário e para as férias com mais um terço e recolhe o INSS. Somando tudo, um funcionário pode custar de 70% a 100% a mais que o salário, conforme o regime de impostos da empresa. O MEI pode ter um único empregado, que recebe o salário mínimo ou o piso da categoria.' },
   7: { title: 'Contrato social e firma reconhecida',
@@ -3145,6 +3517,7 @@ function startAct(n, fresh, training){
   audio();
   ['title','done','over'].forEach(id => $(id).classList.add('hidden')); $('eduBox').classList.add('hidden'); closeMap();
   $('tip').classList.add('hidden');
+  G.keyRun = {}; G.doorRun = {}; G.cdCheck = null;
   G.act = n; G.training = !!training; G.hintPop = null; G.hits = 0; G.goalRun = null; G.goldRun = {}; if (fresh) { G.score = 0; G.lives = 3; }
   G.check = null; buildLevel(); spawn(); applySky(LV.sky); buildStatic(); buildDynamic();
   for (const p of parts) p.life = 0; updParts();
@@ -3163,6 +3536,10 @@ const TIPS = {
   arrancada: { t: 'Nova habilidade: Arrancada!', d: () => (isTouch ? 'Parado, segure o botão ARRANCAR e solte: o Motoca dispara rolando.' : 'Parado, segure ↓ (ou Shift) e solte: o Motoca dispara rolando.') + ' Quanto mais tempo segurar, mais forte. A arrancada quebra as pilhas de papelada e derruba inimigos. Correndo e pulando rolando, ela vai longe!' + ' Na Temporada 2, cada fase também tem 3 selos dourados escondidos nos lugares mais difíceis.' },
   ponto: { t: 'Relógio de ponto!', d: () => 'Encoste no relógio para bater o ponto: prensas, esteiras e engrenagens param por alguns segundos. Cuidado com as engrenagens de dentes: pular em cima machuca, só a arrancada derruba. E as rodas gigantes giram com plataformas: suba e aproveite a volta.' },
   prazo: { t: 'O prazo está chegando!', d: () => 'Uma parede de papelada vem atrás de você e não para. Corra sem parar! Bater o ponto no relógio também segura o prazo por alguns segundos. Correndo, toque ' + (isTouch ? 'ARRANCAR' : '↓ (ou Shift)') + ' para rolar e quebrar a papelada sem perder tempo.' },
+  cancela: { t: 'Porto da Importação!', d: () => 'As cancelas da alfândega abrem e fecham: quando a luz fica amarela, ela vai fechar. Os scanners de raio-X piscam antes de ligar: não passe pelo feixe azul. Os contêineres pendurados nos guindastes servem de plataforma: suba e aproveite a viagem.' },
+  canalVermelho: { t: 'Canal vermelho!', d: () => 'No canal vermelho a carga é conferida inteira: mais cancelas, mais scanners e esteiras empurrando você. Calma e ritmo: espere a luz verde e o scanner apagar.' },
+  guias: { t: 'Labirinto Tributário!', d: () => 'Cada porta colorida só abre com a guia da mesma cor. As guias ficam espalhadas pelo labirinto, em outros andares: procure caminhos para cima e para baixo. Cuidado com as cascatas de impostos: quando a luz pisca, a cascata vai despencar.' },
+  prazoFinal: { t: 'Prazo final!', d: () => 'Esta fase tem contagem regressiva: se o prazo acabar, você perde uma vida. Pegue as ampulhetas para ganhar 12 segundos. Na bifurcação, o caminho de cima é mais rápido e mais perigoso; o de baixo é mais longo, mas tem ampulhetas.' },
   parede: { t: 'Nova habilidade: Pulo na parede!', d: () => 'No ar, encoste numa parede segurando a direção dela: o Motoca escorrega devagar. Aí ' + (isTouch ? 'toque PULAR' : 'aperte o pulo') + ' para saltar para o outro lado. Entre duas paredes, dá para subir pulando de uma para a outra.' }
 };
 function showTip(k){
@@ -3329,7 +3706,7 @@ function openMap(o){
   MAP.keep = !!o.keep; MAP.next = to; MAP.pos = from - 1 - bse; MAP.target = to - 1 - bse; MAP.sel = to - 1 - bse; MAP.on = true; updSetBtn();
   G.state = 'map';
   ['title','done','over','pause'].forEach(id => { const el = $(id); if (el) el.classList.add('hidden'); });
-  ['hud','lives','seloHud','bossHud','touch','card','frz'].forEach(id => $(id).classList.add('hidden'));
+  ['hud','lives','seloHud','bossHud','touch','card','frz','keysHud'].forEach(id => $(id).classList.add('hidden'));
   $('mapScreen').classList.remove('hidden'); $('pauseBtn').classList.add('hidden'); fitMap(); updMapPanel(); playSong('mapa');
   if (!MAP.loop) { MAP.loop = true; requestAnimationFrame(mapFrame); }
 }
@@ -3640,7 +4017,7 @@ function frame(now){
 }
 const fontsReady = document.fonts ? Promise.race([document.fonts.load('800 40px "Baloo 2"'), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve();
 fontsReady.then(() => {
-  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0, 3: loadNum('motoca-doc3') > 0, 4: loadNum('motoca-doc4') > 0, 5: loadNum('motoca-doc5') > 0, 6: loadNum('motoca-doc6') > 0, 7: loadNum('motoca-doc7') > 0, 8: loadNum('motoca-doc8') > 0 };
+  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0, 3: loadNum('motoca-doc3') > 0, 4: loadNum('motoca-doc4') > 0, 5: loadNum('motoca-doc5') > 0, 6: loadNum('motoca-doc6') > 0, 7: loadNum('motoca-doc7') > 0, 8: loadNum('motoca-doc8') > 0, 9: loadNum('motoca-doc9') > 0, 10: loadNum('motoca-doc10') > 0 };
   makeTextures(); buildLevel(); applySky(LV.sky); spawn(); buildStatic(); buildDynamic(); hero = buildHero(); refreshTitle();
   $('loading').remove(); $('title').classList.remove('hidden');
   updateCamera(true); requestAnimationFrame(frame);
