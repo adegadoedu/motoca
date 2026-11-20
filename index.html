@@ -3994,8 +3994,14 @@ function pedirSair(){ audio(); setPause(true); $('pause').classList.add('hidden'
 $('exitBtn').onclick = pedirSair; $('pExitBtn').onclick = pedirSair;
 $('sairNao').onclick = () => { $('sair').classList.add('hidden'); setPause(false); };
 $('sairSim').onclick = () => { $('sair').classList.add('hidden'); setPause(false); showTitle(); };
-if (/github\.io$/.test(location.hostname)) $('voltarAdega').classList.remove('hidden');
-if (window.Capacitor) { $('voltarAdega').href = 'https://adegadoedu.github.io/Tycoon/'; $('voltarAdega').classList.remove('hidden'); }
+// Voltar à Adega: volta para o mesmo lugar de onde o jogador veio (mapa ou loja)
+(function(){
+  let volta = new URLSearchParams(location.search).get('volta');
+  try { if (volta) sessionStorage.setItem('motocaVolta', volta); else volta = sessionStorage.getItem('motocaVolta'); } catch (e) {}
+  $('voltarAdega').href = 'https://adegadoedu.github.io/Tycoon/' + (volta === 'mapa' ? '#mapa' : '');
+  $('voltarAdega').textContent = volta === 'mapa' ? 'Voltar ao mapa da Adega' : 'Voltar à Adega';
+})();
+if (/github\.io$/.test(location.hostname) || window.Capacitor) $('voltarAdega').classList.remove('hidden');
 $('resumeBtn').onclick = () => setPause(false);
 $('restartBtn').onclick = () => { setPause(false); G.score = G.actStartScore || 0; startAct(G.act, false, G.training); };
 $('pMapBtn').onclick = () => { setPause(false); openMap({ from: G.act, to: G.act }); };
