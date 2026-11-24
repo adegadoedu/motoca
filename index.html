@@ -296,6 +296,8 @@ const SONGS = {
   7: { bpm: 126, root: 62, lw: 'triangle', lv: 0.06, lead: [0,null,3,5,7,null,5,3, 2,null,null,null,7,null,10,null, 8,null,7,5,3,null,5,7, 3,null,2,null,0,null,null,null], bass: [0,null,7,null,0,null,7,null, -2,null,5,null,-2,null,5,null], hat: true },
   8: { bpm: 132, root: 57, lead: [0,null,0,7,null,7,5,null, 3,null,3,5,null,7,null,null, 0,null,0,7,null,10,8,null, 7,null,5,3,2,null,null,null], bass: [0,0,null,0,0,null,0,null, -2,-2,null,-2,-2,null,-2,null], hat: true, kick: true },
   9: { bpm: 118, root: 64, lw: 'triangle', lv: 0.06, lead: [0,null,3,null,7,null,3,null, 8,null,7,null,3,null,2,null, 0,null,3,null,7,null,10,null, 8,7,5,3,2,null,null,null], bass: [0,null,null,0,-5,null,null,-5, -4,null,null,-4,-5,null,null,-5], hat: true },
+  11: { bpm: 132, root: 64, lead: [0,null,3,5,null,7,null,5, 3,null,0,null,-2,null,0,null, 0,null,3,5,null,7,10,null, 7,null,5,3,0,null,null,null], bass: [0,null,0,null,-4,null,-4,null, -2,null,-2,null,-7,null,-5,null], hat: true, kick: true },
+  12: { bpm: 138, root: 60, lead: [0,4,7,null,4,7,12,null, 11,null,7,4,null,2,null,null, 0,4,7,null,9,7,4,null, 2,null,4,0,null,null,null,null], bass: [0,null,0,null,5,null,5,null, 7,null,7,null,5,null,4,null], hat: true, kick: true },
   10: { bpm: 126, root: 62, lead: [0,null,4,7,null,4,9,null, 7,null,4,2,null,0,null,null, 0,null,4,7,null,9,12,null, 11,null,9,7,4,null,null,null], bass: [0,null,0,null,-3,null,-3,null, -5,null,-5,null,-7,null,-5,null], hat: true, kick: true },
   chefe: { bpm: 160, root: 57, lead: [0,null,3,null,7,null,6,null, 5,null,3,null,1,null,0,null, 0,null,3,null,7,null,10,null, 8,7,5,3,1,null,null,null], bass: [0,0,0,0,0,0,0,0, -4,-4,-4,-4,-2,-2,-2,-2], hat: true, kick: true }
 };
@@ -387,9 +389,9 @@ function readInput(){ inp.l = keys.l || touchHeld.l ? 1 : 0; inp.r = keys.r || t
 let crushers = [], hints = [], pwalls = [], drops = [], shots = [], golds = [], clocks = [], gearsDeco = [], guias = [], cascades = [], hourglasses = [], gates = [];
 const KEYCOL = { vermelha: 0xd7263d, azul: 0x2e6bd0, verde: 0x2e9a5a }, KEYCSS = { vermelha: '#d7263d', azul: '#2e6bd0', verde: '#2e9a5a' };
 let grid, rings, boxes, enemies, springs, cones, checks, plats, loose, pads, belts, buttons, doors, cubes, vents, spawners, rollers, selo, goal, boss, npc, LV;
-const BUILT = 30;
-const DOCNAME = { 1: 'CNPJ', 2: 'Alvará', 3: 'Vistoria dos Bombeiros', 4: 'Licença Sanitária', 5: 'Inscrição Estadual', 6: 'Certidão Negativa', 7: 'Contrato Social', 8: 'Registro do Funcionário', 9: 'Nota Fiscal', 10: 'Licença de Importação' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2', 3: 'motoca-doc3', 4: 'motoca-doc4', 5: 'motoca-doc5', 6: 'motoca-doc6', 7: 'motoca-doc7', 8: 'motoca-doc8', 9: 'motoca-doc9', 10: 'motoca-doc10' };
-const DOCPOP = { 1: 'CNPJ conquistado!', 2: 'Alvará conquistado!', 3: 'Vistoria dos Bombeiros conquistada!', 4: 'Licença Sanitária conquistada!', 5: 'Inscrição Estadual conquistada!', 6: 'Certidão Negativa conquistada!', 7: 'Contrato Social conquistado!', 8: 'Registro do Funcionário conquistado!', 9: 'Nota Fiscal conquistada!', 10: 'Licença de Importação conquistada!' };
+const BUILT = 36;
+const DOCNAME = { 1: 'CNPJ', 2: 'Alvará', 3: 'Vistoria dos Bombeiros', 4: 'Licença Sanitária', 5: 'Inscrição Estadual', 6: 'Certidão Negativa', 7: 'Contrato Social', 8: 'Registro do Funcionário', 9: 'Nota Fiscal', 10: 'Licença de Importação', 11: 'Livro Caixa', 12: 'Nota de Compra' }, DOCKEY = { 1: 'motoca-selo1', 2: 'motoca-doc2', 3: 'motoca-doc3', 4: 'motoca-doc4', 5: 'motoca-doc5', 6: 'motoca-doc6', 7: 'motoca-doc7', 8: 'motoca-doc8', 9: 'motoca-doc9', 10: 'motoca-doc10', 11: 'motoca-doc11', 12: 'motoca-doc12' };
+const DOCPOP = { 1: 'CNPJ conquistado!', 2: 'Alvará conquistado!', 3: 'Vistoria dos Bombeiros conquistada!', 4: 'Licença Sanitária conquistada!', 5: 'Inscrição Estadual conquistada!', 6: 'Certidão Negativa conquistada!', 7: 'Contrato Social conquistado!', 8: 'Registro do Funcionário conquistado!', 9: 'Nota Fiscal conquistada!', 10: 'Licença de Importação conquistada!', 11: 'Livro Caixa conquistado!', 12: 'Nota de Compra conquistada!' };
 const ACTS = {
   1: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 1', sky:'day', facade:{ x:245.5, kind:'adega' }, sign:true },
   2: { zone:1, theme:'street', name:'Rua da Adega', sub:'Zona 1 · Ato 2', sky:'sunset', facade:null },
@@ -420,7 +422,13 @@ const ACTS = {
   27: { zone:9, season:2, theme:'labirinto', name:'Labirinto Tributário', sub:'Zona 9 · Ato 3', sky:'labirinto', facade:null, bossSign:true },
   28: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 1', sky:'porto', facade:null, tip:'cancela' },
   29: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 2 · Canal vermelho', sky:'porto', facade:null, tip:'canalVermelho' },
-  30: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 3', sky:'porto', facade:null, bossSign:true }
+  30: { zone:10, season:2, theme:'porto', name:'Porto da Importação', sub:'Zona 10 · Ato 3', sky:'porto', facade:null, bossSign:true },
+  31: { zone:11, season:2, theme:'fiado', name:'Rua do Fiado', sub:'Zona 11 · Ato 1', sky:'sunset', facade:null, tip:'fiado' },
+  32: { zone:11, season:2, theme:'fiado', name:'Rua do Fiado', sub:'Zona 11 · Ato 2 · Cobrança', sky:'dusk', facade:null, tip:'cobranca' },
+  33: { zone:11, season:2, theme:'fiado', name:'Rua do Fiado', sub:'Zona 11 · Ato 3', sky:'night', facade:null, bossSign:true },
+  34: { zone:12, season:2, theme:'atacarejo', name:'Atacarejo', sub:'Zona 12 · Ato 1', sky:'atacarejo', facade:null, tip:'atacarejo' },
+  35: { zone:12, season:2, theme:'atacarejo', name:'Atacarejo', sub:'Zona 12 · Ato 2 · Hora do rush', sky:'atacarejo', facade:null, tip:'rush' },
+  36: { zone:12, season:2, theme:'atacarejo', name:'Atacarejo', sub:'Zona 12 · Ato 3', sky:'atacarejo', facade:null, bossSign:true }
 };
 function newGrid(cols, top=0){
   COLS = cols; TOPX = top; grid = Array.from({ length: ROWS }, () => Array(COLS).fill('.'));
@@ -437,7 +445,7 @@ const ringLine = (tx, n, ty, step=1) => { for (let i = 0; i < n; i++) rings.push
 const ringCol = (tx, n, ty) => { for (let i = 0; i < n; i++) rings.push({ x: tx * T + 8, y: (ty - i) * T + 8, alive:true }); };
 const ringArc = (tx, n, ty, h) => { for (let i = 0; i < n; i++) { const k = i / (n - 1); rings.push({ x:(tx + i) * T + 8, y: ty * T + 8 - Math.sin(k * Math.PI) * h, alive:true }); } };
 const box = (tx, ty, item) => boxes.push({ x: tx * T + 8, y: (ty + 1) * T, item, alive:true });
-const enemy = (type, tx, range, ty=13) => enemies.push({ type, x: tx * T + 8, y: ty * T, x0: tx * T + 8 - range * T, x1: tx * T + 8 + range * T, vx: (type === 'carrinho' || type === 'garrafa' || type === 'engrenagem') ? -1.6 : -0.6, t: Math.random() * 100, alive:true, baseY: ty * T });
+const enemy = (type, tx, range, ty=13) => enemies.push({ type, x: tx * T + 8, y: ty * T, x0: tx * T + 8 - range * T, x1: tx * T + 8 + range * T, vx: (type === 'carrinho' || type === 'garrafa' || type === 'engrenagem' || type === 'carrinhoMercado') ? -1.6 : -0.6, t: Math.random() * 100, alive:true, baseY: ty * T });
 const spring = (tx, ty=13, pow=-9.6) => springs.push({ x: tx * T + 8, y: ty * T, pow, comp:0 });
 const cone = (tx, ty=13) => cones.push({ x: tx * T + 8, y: ty * T });
 const plat = (tx, ty, range, speed=0.02) => plats.push({ x0: tx * T, x: tx * T, y: ty * T, w: 48, range: range * T, sp: speed, t: 0, dx: 0 });
@@ -1194,6 +1202,130 @@ function level30(){
   blocks(72, 76, -4, 13);
   boss = { kind:'crane', a0:56, a1:72, x:64 * T + 8, y:13 * T - 330, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, cd:60, tx:0 };
 }
+/* ---------- Temporada 2 · Zona 11: Rua do Fiado ---------- */
+function level31(){
+  newGrid(300, 4);
+  ground(0, 38);
+  npc = { x: 8 * T + 8, y: 13 * T, said: false, text: 'Zé: fim de tarde na Rua do Fiado! Todo mundo quer pendurar a conta... mas o fornecedor da Adega só aceita pagamento à vista.' };
+  ringLine(4, 5, 12); blocks(16, 19, 10, 13); ringLine(16, 3, 9); enemy('caderninho', 26, 4); blocks(32, 35, 9, 13); ringLine(32, 3, 8);
+  plat(42, 11, 3.5, 0.02); ringLine(41, 8, 9);
+  ground(52, 97);
+  checkpoint(55);
+  blocks(60, 72, -4, 9); gate(64, 9, 13, 220, 130, 0); enemy('cachorro', 69, 1); ringLine(61, 10, 12);
+  enemy('pombo', 80, 3);
+  blocks(86, 89, 10, 13); blocks(90, 93, 7, 13); blocks(94, 97, 4, 13); ringLine(90, 3, 6); ringLine(94, 3, 3);
+  plat(100, 4, 2.5, 0.022); gold(103, 0);
+  blocks(108, 111, 4, 13); ringLine(108, 3, 3);
+  ground(112, 300);
+  checkpoint(116);
+  enemy('caderninho', 124, 3); drop(130, 1); drop(133, 2); drop(136, 3); enemy('cachorro', 142, 2); ringLine(125, 18, 12);
+  box(150, 12, 'rings'); enemy('carrinho', 156, 4);
+  spring(161); blocks(164, 177, 4, 5); ringLine(165, 8, 3); enemy('gato', 170, 3, 4);
+  plat(180, 4, 2.5, 0.02); blocks(187, 191, 4, 5); selo = { x: 189 * T + 8, y: 4 * T - 22, got: false }; gold(194, 0);
+  checkpoint(198);
+  blocks(210, 211, 4, 11); blocks(213, 214, 4, 11); gold(212, 3); ringCol(212, 4, 10);
+  enemy('caderninho', 220, 2);
+  pwall(226, 8, 13); blocks(230, 244, -4, 9); gate(234, 9, 13, 180, 100, 0); gate(241, 9, 13, 180, 100, 60); ringLine(231, 12, 12);
+  enemy('pombo', 252, 3); enemy('carrinho', 262, 4); ringLine(266, 6, 12);
+  goal = { x: 280 * T + 8, y: 13 * T, done: false };
+  blocks(296, 300, -4, 13);
+}
+function level32(){
+  newGrid(300);
+  LV.chase = { x: -300, sp: 1.45, acc: 0.0005, max: 2.3, cur: 1.45 };
+  ground(0, 44); ringLine(6, 6, 12);
+  npc = { x: 7 * T + 8, y: 13 * T, said: false, text: 'Zé: o boleto do fornecedor vence hoje! Corre, Motoca: a pilha de contas penduradas vem atrás!' };
+  ringLine(14, 12, 12); enemy('caderninho', 24, 3);
+  pwall(34, 8, 13);
+  ringArc(44, 5, 11, 30);
+  ground(49, 120);
+  enemy('caderninho', 58, 3); enemy('pombo', 66, 3);
+  drop(74, 1); drop(78, 2); drop(82, 3); ringLine(73, 12, 12);
+  checkpoint(92);
+  pad(96); pwall(104, 8, 13); ringLine(97, 6, 12);
+  plat(122, 11, 2, 0.025); plat(128, 10, 2, 0.03); gold(125, 6); ringArc(121, 10, 7, 20);
+  ground(134, 300);
+  enemy('cachorro', 140, 2); blocks(153, 155, 11, 13); enemy('caderninho', 160, 2);
+  drop(164, 1); drop(168, 2); drop(172, 3); drop(176, 1); ringLine(163, 14, 12);
+  checkpoint(184);
+  spring(190); blocks(193, 214, 5, 6); ringLine(194, 10, 4, 2); gold(212, 4);
+  enemy('gato', 200, 5); enemy('cachorro', 208, 2);
+  pwall(220, 8, 13); enemy('caderninho', 228, 3);
+  blocks(236, 237, 4, 11); blocks(239, 240, 4, 11); gold(237, 3);
+  pad(246); pwall(254, 8, 13); enemy('carrinho', 268, 3);
+  ringLine(258, 8, 12);
+  goal = { x: 284 * T + 8, y: 13 * T, done: false };
+  blocks(296, 300, 0, 13);
+}
+function level33(){
+  newGrid(76);
+  ground(0, 76); ringLine(4, 5, 12);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: a Caderneta do Fiado não para de somar conta pendurada! Espere ela parar para somar e pule em cima!' };
+  cascade(18, 4, 13, 150, 60, 0); gold(18, 12); enemy('caderninho', 26, 2);
+  spring(36); gold(36, 2); cascade(40, 4, 13, 150, 60, 75); enemy('cachorro', 44, 2);
+  box(48, 12, 'shield'); checkpoint(51); ringLine(52, 3, 12);
+  gold(64, 4);
+  blocks(72, 76, 0, 13);
+  boss = { kind:'calc', skin:'fiado', a0:56, a1:72, x:(72 - 4) * T + 8, y:13 * T - 320, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, cols:[], arm:0 };
+}
+/* ---------- Temporada 2 · Zona 12: Atacarejo ---------- */
+function level34(){
+  newGrid(290, 4);
+  ground(0, 52);
+  npc = { x: 7 * T + 8, y: 13 * T, said: false, text: 'Zé: hoje a gente compra no atacarejo! É um pouco mais barato, mas tem gasolina, estacionamento e o tempo de ir e vir...' };
+  ringLine(4, 4, 12);
+  belt(12, 44, 1); cascade(18, 6, 13, 150, 60, 0); enemy('carrinhoMercado', 30, 4); cascade(34, 6, 13, 150, 60, 100); ringLine(14, 26, 12, 2);
+  blocks(46, 48, 11, 13); enemy('caixote', 50, 1);
+  crane(55, 11, 2.5, 0.025); crane(64, 10, 2.5, 0.031); crane(73, 11, 2.5, 0.022); ringLine(54, 26, 8); gold(64, 5);
+  ground(84, 160);
+  checkpoint(88);
+  blocks(96, 112, -4, 9); gate(99, 9, 13, 170, 95, 0); gate(105, 9, 13, 170, 95, 40); enemy('garrafa', 109, 2); ringLine(97, 14, 12);
+  enemy('carrinhoMercado', 118, 3);
+  blocks(124, 132, 3, 13); craneLift(121, 7, 5, 0.025); ringCol(122, 5, 8); gold(128, 0);
+  belt(132, 152, -1); drop(138, 2); drop(146, 3); enemy('caixote', 142, 3); ringLine(134, 16, 12);
+  ground(166, 290);
+  crane(160, 11, 2, 0.03);
+  checkpoint(170);
+  blocks(178, 200, -4, 9); gate(182, 9, 13, 160, 90, 0); enemy('garrafa', 187, 2); gate(192, 9, 13, 160, 90, 50); ringLine(179, 20, 12);
+  enemy('carrinhoMercado', 208, 4); enemy('pombo', 214, 3);
+  blocks(220, 223, 10, 13); blocks(226, 229, 7, 13); selo = { x: 227 * T + 8, y: 7 * T - 22, got: false }; crane(233, 7, 2, 0.026); blocks(240, 243, 7, 13); gold(242, 3);
+  belt(246, 262, 1); cascade(252, 6, 13, 140, 55, 0); cascade(258, 6, 13, 140, 55, 60);
+  ringLine(264, 6, 12);
+  goal = { x: 274 * T + 8, y: 13 * T, done: false };
+  blocks(286, 290, -4, 13);
+}
+function level35(){
+  newGrid(290, 6);
+  LV.countdown = 75;
+  ground(0, 290);
+  npc = { x: 8 * T + 8, y: 13 * T, said: false, text: 'Zé: o atacarejo fecha já! Cada minuto aqui é a Adega sem o Edu no balcão. Pegue as ampulhetas para ganhar tempo!' };
+  ringLine(4, 5, 12); cascade(22, 4, 13, 150, 60, 0); hourglass(30, 11); enemy('carrinhoMercado', 38, 3);
+  belt(44, 56, 1); cascade(50, 4, 13, 140, 55, 30); ringLine(44, 10, 12);
+  checkpoint(62);
+  spring(65); blocks(68, 150, 5, 6); for (const [a, b2] of [[86, 90], [110, 114], [132, 136]]) for (let x = a; x < b2; x++) setT(x, 5, '.');
+  cascade(78, -4, 5, 130, 55, 0); cascade(100, -4, 5, 130, 55, 40); cascade(122, -4, 5, 130, 55, 80); ringLine(70, 14, 4, 2); enemy('caixote', 146, 1, 5); gold(148, 3);
+  belt(72, 96, -1); hourglass(80, 12); enemy('garrafa', 100, 2); blocks(104, 106, 10, 13); hourglass(118, 9); enemy('pombo', 126, 3); belt(130, 146, -1); hourglass(140, 12); ringLine(108, 8, 12);
+  checkpoint(156);
+  enemy('carrinhoMercado', 166, 4); blocks(176, 177, 2, 11); blocks(179, 180, 2, 11); gold(177, 1); ringCol(177, 4, 10);
+  cascade(186, 4, 13, 150, 60, 20); enemy('caixote', 190, 2);
+  spring(194); blocks(198, 214, 5, 6); hourglass(212, 4); cascade(206, -4, 5, 140, 55, 60); ringLine(200, 6, 4);
+  blocks(225, 228, 4, 5); gold(226, 3);
+  hourglass(238, 12); ringLine(240, 8, 12); enemy('carrinhoMercado', 254, 3); cascade(262, 4, 13, 150, 60, 0);
+  goal = { x: 272 * T + 8, y: 13 * T, done: false };
+  blocks(286, 290, -6, 13);
+}
+function level36(){
+  newGrid(76);
+  ground(0, 76); ringLine(4, 5, 12);
+  npc = { x: 9 * T + 8, y: 13 * T, said: false, text: 'Zé: o Caixa do Atacarejo só aceita à vista e não para de imprimir cupom! Bata o relógio para ele travar e pule em cima!' };
+  box(19, 12, 'rings'); gold(19, 6);
+  belt(22, 32, 1); enemy('carrinhoMercado', 36, 3);
+  clock(40); crusher(43, 0); crusher(47, 30); gold(45, 10);
+  box(50, 12, 'shield'); checkpoint(52);
+  clock(62); gold(66, 4);
+  blocks(72, 76, 0, 13);
+  boss = { kind:'maquina', skin:'caixa', a0:56, a1:72, x:(72 - 5) * T + 8, y:13 * T - 320, vy:0, hp:8, maxHp:8, dir:-1, state:'idle', t:0, inv:0, target:0, forks:0, crates:[], zeX:0, zeY:0, print:0 };
+}
 function rngOf(seed){ let a = seed >>> 0; return () => { a = (a + 0x6D2B79F5) >>> 0; let t = a; t = Math.imul(t ^ (t >>> 15), t | 1); t ^= t + Math.imul(t ^ (t >>> 7), t | 61); return ((t ^ (t >>> 14)) >>> 0) / 4294967296; }; }
 function colTop(x){ for (let r = 0; r < ROWS; r++) if (grid[r][x] !== '.') return r; return -1; }
 function findSplit(){
@@ -1271,7 +1403,7 @@ function hardenLevel(){
   if (boss) { if (boss.kind === 'monster') { boss.hp = 12; boss.maxHp = 12; } else { boss.hp = 8; boss.maxHp = 8; } }
 }
 function buildLevel(){ if (G.training) { LV = Object.assign({}, ACTS[1], { name: 'Treino', sub: 'Aprenda a jogar', facade: null, sign: false }); levelTreino(); Object.assign(HARD, { sp: 1, hop: 45, hopV: 1.1, crUp: 100, spawn: 110 }); return; }
-  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18, 19: level19, 20: level20, 21: level21, 22: level22, 23: level23, 24: level24, 25: level25, 26: level26, 27: level27, 28: level28, 29: level29, 30: level30 })[G.act](); hardenLevel(); hints.length = 0;
+  LV = Object.assign({}, ACTS[G.act]); if (LV.facade) LV.facade = Object.assign({}, LV.facade); ({ 1: level1, 2: level2, 3: level3, 4: level4, 5: level5, 6: level6, 7: level7, 8: level8, 9: level9, 10: level10, 11: level11, 12: level12, 13: level13, 14: level14, 15: level15, 16: level16, 17: level17, 18: level18, 19: level19, 20: level20, 21: level21, 22: level22, 23: level23, 24: level24, 25: level25, 26: level26, 27: level27, 28: level28, 29: level29, 30: level30, 31: level31, 32: level32, 33: level33, 34: level34, 35: level35, 36: level36 })[G.act](); hardenLevel(); hints.length = 0;
   if (!LV.par) LV.par = boss ? (boss.kind === 'monster' ? 110 : 85) : Math.round(COLS / 5 + 15);
   guias.forEach(k => { if (G.keyRun && G.keyRun[k.color]) k.got = true; });
   doors.forEach(d => { if (d.key && G.doorRun && G.doorRun[d.id]) { d.open = true; d.lift = 1; for (let y = d.ty0; y < d.ty1; y++) setT(d.tx, y, '.'); } });
@@ -1475,7 +1607,7 @@ function interact(prevY){
       else hurt(e.x);
       continue;
     }
-    const h = (e.type === 'carrinho' || e.type === 'garrafa') ? 15 : e.type === 'carimbador' ? 16 : (e.type === 'cachorro' || e.type === 'caixote' || e.type === 'leaozinho') ? 13 : (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato') ? 14 : 10;
+    const h = (e.type === 'carrinho' || e.type === 'garrafa' || e.type === 'carrinhoMercado') ? 15 : e.type === 'caderninho' ? 14 : e.type === 'carimbador' ? 16 : (e.type === 'cachorro' || e.type === 'caixote' || e.type === 'leaozinho') ? 13 : (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato') ? 14 : 10;
     const eb = { x0: e.x - 8, x1: e.x + 8, y0: e.y - h, y1: e.y };
     if (!overlap(pb, eb)) continue;
     if (P.ball || (P.vy > 0 && prevY <= eb.y0 + 6)) {
@@ -1567,7 +1699,7 @@ function updateWorld(){
       if (e.cd <= 0 && Math.abs(P.x - e.x) < 230 && Math.abs(P.y - e.y) < 40 && P.state === 'play') { e.cd = HARD.shot || 110; e.fire = 12; shots.push({ x: e.x + dir * 12, y: e.y - 9, vx: dir * 2.4, alive: true, life: 200 }); sfx('shot'); }
       if (e.fire > 0) e.fire--; continue;
     }
-    if (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato') {
+    if (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato' || e.type === 'caderninho') {
       e.hvy = (e.hvy || 0) + 0.28; e.hy = Math.min(0, (e.hy || 0) + e.hvy);
       if (e.hy === 0) { e.hvy = 0; e.land = (e.land || 0) + 1; if (e.land > HARD.hop) { e.land = 0; e.hvy = -5; e.vx = (P.x < e.x ? -1 : 1) * HARD.hopV; sfx('jump'); } }
       else { e.x = Math.max(e.x0, Math.min(e.x1, e.x + e.vx)); }
@@ -1607,11 +1739,12 @@ function updateWorld(){
 }
 
 /* ---------- Chefe: Doutor Carimbo na empilhadeira de processos ---------- */
+const BOSS_SKIN = { fiado: { nome: 'Caderneta do Fiado', lock: 'Fuja da chuva de notinhas! Quando a caderneta parar para somar, pule em cima!', win: 'Fiado quitado!' }, caixa: { nome: 'Caixa do Atacarejo', lock: 'Bata o relógio: o caixa trava e aí dá para pular em cima dele!', win: 'Compra paga à vista!' } };
 function bossLockCheck(){
   if (!boss || G.lock || P.state !== 'play') return;
   if (P.x > (boss.a0 + 3) * T) {
     G.lock = true; for (let y = 0; y < 13; y++) grid[y][boss.a0 - 1] = 'B'; playSong('chefe');
-    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : boss.kind === 'freezer' ? 'Pule em cima quando ele abrir a tampa!' : boss.kind === 'truck' ? 'Pule o caminhão! Quando ele bater, pule em cima!' : boss.kind === 'balloon' ? 'Quando o balão descer, pule no cesto!' : boss.kind === 'monster' ? 'Quando o monstro se abaixar, pule na cabeça!' : boss.kind === 'tabeliao' ? 'Quando o carimbo prender no chão, pule na cabeça dele ou use a arrancada!' : boss.kind === 'maquina' ? 'Bata o ponto no relógio: a máquina para e aí dá para pular em cima dela!' : boss.kind === 'calc' ? 'Fuja das cascatas! Quando ela parar para calcular, pule em cima!' : boss.kind === 'crane' ? 'Desvie dos contêineres! Quando a garra ficar presa no chão, pule em cima!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
+    boss.state = 'enter'; boss.t = 0; sfx('alarm'); pop(P.x + 40, P.y - 60, boss.skin ? BOSS_SKIN[boss.skin].lock : boss.kind === 'panel' ? 'Quando o painel cair, pule em cima!' : boss.kind === 'freezer' ? 'Pule em cima quando ele abrir a tampa!' : boss.kind === 'truck' ? 'Pule o caminhão! Quando ele bater, pule em cima!' : boss.kind === 'balloon' ? 'Quando o balão descer, pule no cesto!' : boss.kind === 'monster' ? 'Quando o monstro se abaixar, pule na cabeça!' : boss.kind === 'tabeliao' ? 'Quando o carimbo prender no chão, pule na cabeça dele ou use a arrancada!' : boss.kind === 'maquina' ? 'Bata o ponto no relógio: a máquina para e aí dá para pular em cima dela!' : boss.kind === 'calc' ? 'Fuja das cascatas! Quando ela parar para calcular, pule em cima!' : boss.kind === 'crane' ? 'Desvie dos contêineres! Quando a garra ficar presa no chão, pule em cima!' : 'Pule em cima do Doutor Carimbo!', 160, 0.15);
   }
 }
 function throwCrates(){
@@ -1914,7 +2047,7 @@ function updateBoss(){
       if (b.t < 120 && b.t % 5 === 0) burst(b.x + (Math.random() - 0.5) * 44, b.y - 10 - Math.random() * 30, Math.random() < 0.5 ? 0x777777 : 0xffb84a);
       if (b.t < 120 && b.t % 15 === 0) sfx('pop');
       if (b.t > 50) { b.zeX += 2.4; b.zeY = Math.abs(Math.sin(b.t * 0.22)) * 10 + (b.t < 70 ? (b.t - 50) * 1.2 : 0); }
-      if (b.t === 120) { pop(b.x, b.y - 70, b.kind === 'panel' ? 'Senha chamada: a sua!' : b.kind === 'freezer' ? 'Processo descongelado!' : b.kind === 'truck' ? 'Mercadoria liberada!' : b.kind === 'balloon' ? 'Imposto devolvido!' : b.kind === 'monster' ? 'Burocracia vencida!' : b.kind === 'tabeliao' ? 'Firma reconhecida!' : b.kind === 'maquina' ? 'Funcionário registrado!' : b.kind === 'calc' ? 'Nota fiscal emitida!' : b.kind === 'crane' ? 'Carga desembaraçada!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
+      if (b.t === 120) { pop(b.x, b.y - 70, b.skin ? BOSS_SKIN[b.skin].win : b.kind === 'panel' ? 'Senha chamada: a sua!' : b.kind === 'freezer' ? 'Processo descongelado!' : b.kind === 'truck' ? 'Mercadoria liberada!' : b.kind === 'balloon' ? 'Imposto devolvido!' : b.kind === 'monster' ? 'Burocracia vencida!' : b.kind === 'tabeliao' ? 'Firma reconhecida!' : b.kind === 'maquina' ? 'Funcionário registrado!' : b.kind === 'calc' ? 'Nota fiscal emitida!' : b.kind === 'crane' ? 'Carga desembaraçada!' : 'Processo destravado!', 150, 0.2); for (let i = 0; i < 10; i++) addPart(b.x, b.y - 30, (Math.random() - 0.5) * 5, -3 - Math.random() * 3, 0.15, 60, [0xc8925a, 0xd7263d, 0xffd23f][i % 3], 2.4); }
       break;
   }
   for (const c of b.crates) {
@@ -2016,7 +2149,8 @@ const SKIES = {
   cartorio: { tex: skyTex([[0, '#4a3020'], [1, '#c8a878']]), fog: 0xd8c4a0, sun: 0xfff2dc, si: 0.66, hemi: 0xfff0d8, hi: 0.86 },
   fabrica: { tex: skyTex([[0, '#2a2e38'], [1, '#9aa0a8']]), fog: 0xa8acb4, sun: 0xfff4e0, si: 0.7, hemi: 0xe8eef8, hi: 0.8 },
   porto: { tex: skyTex([[0, '#4a86c8'], [0.7, '#f4c890'], [1, '#f8dcb0']]), fog: 0xf0d8b8, sun: 0xfff0d8, si: 0.8, hemi: 0xfff4e4, hi: 0.78 },
-  labirinto: { tex: skyTex([[0, '#3a2a10'], [1, '#d8c080']]), fog: 0xd8c898, sun: 0xfff2d0, si: 0.68, hemi: 0xfff4dc, hi: 0.84 }
+  labirinto: { tex: skyTex([[0, '#3a2a10'], [1, '#d8c080']]), fog: 0xd8c898, sun: 0xfff2d0, si: 0.68, hemi: 0xfff4dc, hi: 0.84 },
+  atacarejo: { tex: skyTex([[0, '#c8ccd0'], [1, '#f0f2f4']]), fog: 0xe8eaec, sun: 0xffffff, si: 0.66, hemi: 0xfdfdff, hi: 0.92 }
 };
 function applySky(k){ const S = SKIES[k] || SKIES.day; scene.background = S.tex; scene.fog.color.setHex(S.fog); sun.color.setHex(S.sun); sun.intensity = S.si; hemi.color.setHex(S.hemi); hemi.intensity = S.hi; }
 
@@ -2319,6 +2453,7 @@ function buildStatic(){
   if (LV && LV.theme === 'porto') { MAT.side = toon(0xffffff, { map: TX.portFloor }); MAT.curb = toon(0xffffff, { map: TX.portEdge }); MAT.brick = toon(0xffffff, { map: TX.portBase }); MAT.crate = toon(0xffffff, { map: TX.contO }); MAT.awn = toon(0xffffff, { map: TX.portShelf }); }
   if (LV && LV.theme === 'labirinto') { MAT.side = toon(0xffffff, { map: TX.labFloor }); MAT.curb = toon(0xffffff, { map: TX.labEdge }); MAT.brick = toon(0xffffff, { map: TX.labBase }); MAT.crate = toon(0xffffff, { map: TX.labBox }); MAT.awn = toon(0xffffff, { map: TX.labShelf }); }
   if (LV && LV.theme === 'fabrica') { MAT.side = toon(0xffffff, { map: TX.fabFloor }); MAT.curb = toon(0xffffff, { map: TX.fabEdge }); MAT.brick = toon(0xffffff, { map: TX.fabBase }); MAT.crate = toon(0xffffff, { map: TX.fabBox }); MAT.awn = toon(0xffffff, { map: TX.fabShelf }); }
+  if (LV && LV.theme === 'atacarejo') { MAT.side = toon(0xffffff, { map: TX.fabFloor }); MAT.curb = toon(0xffffff, { map: TX.fabEdge }); MAT.brick = toon(0xffffff, { map: TX.fabBase }); MAT.crate = toon(0xffffff, { map: TX.fabBox }); }
   if (LV && LV.theme === 'cartorio') { MAT.side = toon(0xffffff, { map: TX.cartFloor }); MAT.curb = toon(0xffffff, { map: TX.cartEdge }); MAT.brick = toon(0xffffff, { map: TX.cartBase }); MAT.crate = toon(0xffffff, { map: TX.cartBox }); MAT.awn = toon(0xffffff, { map: TX.cartShelf }); }
   const D = 4;
   // chão em trechos
@@ -2376,6 +2511,7 @@ function buildStatic(){
   if (LV && LV.theme === 'fabrica') { buildFabricaBack(); return; }
   if (LV && LV.theme === 'labirinto') { buildLabBack(); return; }
   if (LV && LV.theme === 'porto') { buildPortoBack(); return; }
+  if (LV && LV.theme === 'atacarejo') { buildAtacBack(); return; }
   // prédios do fundo
   const R = rng(5), facades = [0xe08a64, 0xf0c66a, 0x84b2d6, 0xbccc76, 0xe4a0b2, 0xf2ead6, 0x96c8b0, 0xd8a070];
   const winMat = new THREE.MeshLambertMaterial({ map: TX.windows, transparent: true });
@@ -2501,6 +2637,27 @@ function buildFabricaBack(){
     else { mesh(new THREE.BoxGeometry(2.2, 1.6, 1.0), toon(0x5a7a6a), x, 0.8, -3.1, staticGroup); mesh(new THREE.BoxGeometry(0.5, 0.5, 0.05), new THREE.MeshBasicMaterial({ color: i % 4 === 1 ? 0x3fdf6a : 0xd7263d }), x + 0.6, 1.1, -2.58, staticGroup, false); }
   }
   if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: TX.fabSign }), 64, 7.6, wallZ + 0.05, staticGroup, false);
+}
+function buildAtacBack(){
+  const wallZ = -3.6, W0 = -24, W1 = COLS + 24, R = rngOf(LV.zone * 31 + G.act);
+  mesh(new THREE.PlaneGeometry(W1 - W0, 24), toon(0xd8d4cc), (W0 + W1) / 2, 10, wallZ, staticGroup, false);
+  mesh(new THREE.PlaneGeometry(W1 - W0, 0.6), toon(0x2e6bd0), (W0 + W1) / 2, 1.2, wallZ + 0.01, staticGroup, false);
+  const laranja = toon(0xf28c28), azul = toon(0x2e6bd0), glow = new THREE.MeshBasicMaterial({ color: 0xfafcff });
+  const caixas = [0xc8a070, 0xb89060, 0xd7263d, 0xf4f4f0, 0x3f73b8, 0x2e9a5a, 0xf2c230];
+  const sinal = (txt, cor) => ctex(256, 80, (c, w, h) => { c.fillStyle = cor; c.fillRect(0, 0, w, h); c.fillStyle = '#fff'; c.font = '800 34px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText(txt, w / 2, h / 2 + 2); });
+  const placas = ['REFRIGERANTES', 'ÁGUA', 'MERCEARIA', 'BISCOITOS', 'LIMPEZA', 'ATACADO'].map((p, i) => new THREE.MeshBasicMaterial({ map: sinal(p, ['#d7263d', '#2e6bd0', '#2e9a5a', '#f28c28', '#7a4ab8', '#1a6a8a'][i]) }));
+  for (let x = W0, i = 0; x < W1; x += 7, i++) {
+    if (LV.bossSign && x > 50 && x < 76) continue;
+    for (const ux of [x, x + 6]) mesh(new THREE.BoxGeometry(0.16, 9, 0.16), laranja, ux, 4.5, wallZ + 0.9, staticGroup, false);
+    for (const y of [2.2, 4.6, 7.0]) {
+      mesh(new THREE.BoxGeometry(6, 0.16, 0.16), azul, x + 3, y, wallZ + 0.9, staticGroup, false);
+      for (let k = 0; k < 4; k++) if (R() < 0.85) { const h = 0.9 + R() * 0.9; mesh(new THREE.BoxGeometry(1.2, h, 1.1), toon(caixas[Math.floor(R() * caixas.length)]), x + 0.8 + k * 1.45, y + 0.08 + h / 2, wallZ + 0.6, staticGroup, false); }
+    }
+    if (i % 2 === 0) mesh(new THREE.PlaneGeometry(3.2, 1.0), placas[i / 2 % placas.length], x + 3, 10.2, wallZ + 1.0, staticGroup, false);
+    mesh(new THREE.BoxGeometry(3, 0.12, 0.4), glow, x + 3, 13.2, -1, staticGroup, false);
+  }
+  const fl = mesh(new THREE.PlaneGeometry(W1 - W0, 1.8), toon(0xffffff, { map: TX.fabFloor }), (W0 + W1) / 2, -0.02, -2.8, staticGroup, false); fl.rotation.x = -Math.PI / 2;
+  if (LV.bossSign) mesh(new THREE.PlaneGeometry(9, 1.7), new THREE.MeshBasicMaterial({ map: ctex(512, 96, (c, w, h) => { c.fillStyle = '#d7263d'; c.fillRect(0, 0, w, h); c.strokeStyle = '#fff'; c.lineWidth = 6; c.strokeRect(8, 8, w - 16, h - 16); c.fillStyle = '#fff'; c.font = '800 44px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('CAIXA · SÓ À VISTA', w / 2, h / 2 + 2); }) }), 64, 7.6, wallZ + 1.1, staticGroup, false);
 }
 function buildCartorioBack(){
   const wallZ = -3.6, segW = 8, W0 = -24, W1 = COLS + 24, H = 20 + TOPX;
@@ -2748,6 +2905,24 @@ function buildEnemy(e){
     eyes(0.2, 0.18, [0.06], 0.06); eyes(0.06, 0.18, [0.06], 0.06);
     parts.wings = [-1, 1].map(s => { const w = new THREE.Group(); w.position.set(-0.05, 0.42, s * 0.05); body.add(w);
       mesh(new THREE.BoxGeometry(0.34, 0.03, 0.3), white, -0.05, 0, s * 0.16, w); w.userData.s = s; return w; });
+  } else if (e.type === 'caderninho') {
+    // caderneta do fiado pulando atrás de você: "pendura pra mim?"
+    const capa = toon(0xd7263d), folha = toon(0xfffbef), espiral = toon(0x9aa0a8);
+    mesh(new THREE.BoxGeometry(0.52, 0.66, 0.16), capa, 0, 0.42, 0, body);
+    mesh(new THREE.BoxGeometry(0.48, 0.62, 0.17), folha, 0.03, 0.42, 0, body, false);
+    for (let i = 0; i < 6; i++) { const r = mesh(new THREE.TorusGeometry(0.045, 0.012, 6, 10), espiral, -0.26, 0.17 + i * 0.1, 0, body, false); r.rotation.y = Math.PI / 2; }
+    mesh(new THREE.PlaneGeometry(0.36, 0.13), new THREE.MeshBasicMaterial({ map: GEO.fiadoTex || (GEO.fiadoTex = ctex(128, 48, (c, w, h) => { c.fillStyle = '#fffbef'; c.fillRect(0, 0, w, h); c.fillStyle = '#d7263d'; c.font = '800 30px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('FIADO', w / 2, h / 2 + 2); })) }), 0.04, 0.58, 0.09, body, false);
+    eyes(0.28, 0.4, [-0.08, 0.08], 0.07);
+  } else if (e.type === 'carrinhoMercado') {
+    // carrinho de compras do atacarejo desgovernado
+    const arame = toon(0xb8c0c8), verm = toon(0xd7263d);
+    mesh(new THREE.BoxGeometry(0.78, 0.04, 0.56), arame, 0, 0.36, 0, body);
+    for (const [w, h, d, x, y, z] of [[0.78, 0.46, 0.03, 0, 0.6, 0.27], [0.78, 0.46, 0.03, 0, 0.6, -0.27], [0.03, 0.46, 0.56, 0.38, 0.6, 0], [0.03, 0.46, 0.56, -0.38, 0.6, 0]]) mesh(new THREE.BoxGeometry(w, h, d), new THREE.MeshToonMaterial({ color: 0xb8c0c8, gradientMap: gm, transparent: true, opacity: 0.55 }), x, y, z, body, false);
+    for (const z of [-0.27, 0.27]) for (let i = 0; i < 4; i++) mesh(new THREE.BoxGeometry(0.02, 0.46, 0.02), arame, -0.3 + i * 0.2, 0.6, z, body, false);
+    const al = mesh(new THREE.CylinderGeometry(0.03, 0.03, 0.6, 8), verm, -0.48, 0.92, 0, body); al.rotation.x = Math.PI / 2;
+    mesh(new THREE.BoxGeometry(0.3, 0.2, 0.3), toon(0xc8a070), 0.05, 0.5, 0, body);
+    eyes(0.4, 0.66, [-0.12, 0.12], 0.08);
+    parts.wheels = [[-0.28, 0.2], [-0.28, -0.2], [0.28, 0.2], [0.28, -0.2]].map(([x, z]) => { const w = mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.06, 10), blk, x, 0.08, z, body); w.rotation.x = Math.PI / 2; return w; });
   } else {
     // gaveteiro de arquivo com rodinhas
     const metal = toon(0x7f9a8a), dark = toon(0x5a7262), handle = toon(0xd8dde2);
@@ -2921,9 +3096,9 @@ function buildCrane(){
   const trol = new THREE.Group(); g.add(trol); mesh(new THREE.BoxGeometry(1.6, 0.8, 1.2), steel, 0, 0, 0, trol); for (const x of [-0.5, 0.5]) mesh(new THREE.CylinderGeometry(0.2, 0.2, 1.3, 10), dk, x, 0.45, 0, trol, false).rotation.x = Math.PI / 2;
   return { g, claw, fingers, cab, trol, eyes };
 }
-function buildCalc(){
+function buildCalc(skin){
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
-  const shell = toon(0xe8e2d0), dark = toon(0x3a3a44), blk = toon(0x1a0b12);
+  const shell = toon(skin === 'fiado' ? 0xd7263d : 0xe8e2d0), dark = toon(0x3a3a44), blk = toon(0x1a0b12);
   for (const x of [-0.6, 0.6]) { mesh(new THREE.CylinderGeometry(0.16, 0.16, 0.9, 8), dark, x, 0.45, 0, body); mesh(new THREE.BoxGeometry(0.5, 0.16, 0.6), blk, x + 0.08, 0.08, 0, body); }
   const torso = new THREE.Group(); torso.position.y = 0.9; body.add(torso);
   mesh(new THREE.BoxGeometry(2.4, 2.8, 1.1), shell, 0, 1.4, 0, torso);
@@ -2933,19 +3108,20 @@ function buildCalc(){
   const cols = [0xd7263d, 0x3a3a44, 0x3a3a44, 0x2e6bd0];
   for (let r = 0; r < 4; r++) for (let q = 0; q < 4; q++) mesh(new THREE.BoxGeometry(0.38, 0.28, 0.12), toon(q === 3 ? 0xf28c28 : r === 0 && q === 0 ? 0xd7263d : 0x5a5a64), -0.75 + q * 0.5, 1.45 - r * 0.36, 0.6, torso, false);
   for (const z of [-0.18, 0.18]) mesh(new THREE.SphereGeometry(0.13, 10, 8), toon(0xffffff), z * 2.6, 3.0, 0.5, torso, false);
+  if (skin === 'fiado') { for (let i = 0; i < 7; i++) { const r = mesh(new THREE.TorusGeometry(0.16, 0.04, 8, 14), toon(0x9aa0a8), -0.9 + i * 0.3, 2.86, 0.1, torso, false); r.rotation.x = Math.PI / 2; } mesh(new THREE.PlaneGeometry(1.6, 0.36), new THREE.MeshBasicMaterial({ map: ctex(256, 56, (c, w, h) => { c.fillStyle = '#fffbef'; c.fillRect(0, 0, w, h); c.fillStyle = '#d7263d'; c.font = '800 40px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('FIADO', w / 2, h / 2 + 2); }) }), 0, 0.45, 0.57, torso, false); }
   const arms = [-1, 1].map(sd => { const a = new THREE.Group(); a.position.set(sd * 1.25, 2.2, 0); torso.add(a); mesh(new THREE.CylinderGeometry(0.1, 0.1, 1.0, 8), dark, 0, -0.5, 0, a); mesh(new THREE.SphereGeometry(0.16, 8, 6), toon(0xe0a882), 0, -1.05, 0, a); return a; });
   return { g, body, torso, arms, cv, tex, last: '' };
 }
 function drawCalc(o, txt, col){ const key = txt + col; if (o.last === key) return; o.last = key; const c = o.cv.getContext('2d'); c.fillStyle = '#b8c8a0'; c.fillRect(0, 0, 256, 96);
   c.fillStyle = col; c.font = '800 46px "Baloo 2", monospace'; c.textAlign = 'right'; c.textBaseline = 'middle'; c.fillText(txt, 240, 52); o.tex.needsUpdate = true; }
-function buildMaquina(){
+function buildMaquina(skin){
   const g = new THREE.Group(), body = new THREE.Group(); g.add(body); scene.add(g);
-  const green = toon(0x5a7a6a), dark = toon(0x3a4a42), steel = toon(0x8a9098), yel = toon(0xf2c230);
+  const cx = skin === 'caixa', green = toon(cx ? 0xd7263d : 0x5a7a6a), dark = toon(cx ? 0x2a2e34 : 0x3a4a42), steel = toon(0x8a9098), yel = toon(0xf2c230);
   mesh(new THREE.BoxGeometry(3.2, 2.4, 1.8), green, 0, 1.6, 0, body);
   mesh(new THREE.BoxGeometry(3.4, 0.3, 2.0), dark, 0, 2.9, 0, body);
   mesh(new THREE.BoxGeometry(3.3, 0.4, 1.9), yel, 0, 0.5, 0, body);
   for (const x of [-1.2, -0.4, 0.4, 1.2]) { const w = mesh(new THREE.CylinderGeometry(0.28, 0.28, 2.0, 12), dark, x, 0.28, 0, body); w.rotation.x = Math.PI / 2; }
-  mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: TX.maqScreen }), 0.2, 2.05, 0.91, body, false);
+  mesh(new THREE.PlaneGeometry(1.4, 0.7), new THREE.MeshBasicMaterial({ map: cx ? (GEO.caixaTela || (GEO.caixaTela = ctex(128, 64, (c, w, h) => { c.fillStyle = '#0a1a10'; c.fillRect(0, 0, w, h); c.fillStyle = '#3fdf6a'; c.font = '800 16px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.textBaseline = 'middle'; c.fillText('TOTAL', w / 2, 18); c.font = '800 20px "Baloo 2", sans-serif'; c.fillText('R$ 4.987', w / 2, 44); }))) : TX.maqScreen }), 0.2, 2.05, 0.91, body, false);
   const eyesM = [-0.9, 1.3].map(x => mesh(new THREE.SphereGeometry(0.2, 10, 8), new THREE.MeshBasicMaterial({ color: 0xff3d3d }), x, 2.3, 0.92, body, false));
   const slot = mesh(new THREE.BoxGeometry(0.2, 0.1, 1.2), toon(0x1a1a1e), 1.62, 1.3, 0, body);
   const paper = mesh(new THREE.BoxGeometry(0.5, 0.03, 0.9), toon(0xf4f0e6), 1.8, 1.3, 0, body, false);
@@ -3128,7 +3304,7 @@ function buildDynamic(){
   V.boss = null; V.gate = null; V.crates = []; V.npc = null;
   if (npc) { V.npc = add(buildZe()); V.npc.position.set(WX(npc.x), WY(npc.y), -0.9); V.npc.rotation.y = -0.5; V.npc.scale.x = -1; }
   if (boss) {
-    V.boss = boss.kind === 'crane' ? buildCrane() : boss.kind === 'calc' ? buildCalc() : boss.kind === 'maquina' ? buildMaquina() : boss.kind === 'tabeliao' ? buildTabeliao() : boss.kind === 'panel' ? buildPanel() : boss.kind === 'freezer' ? buildFreezer() : boss.kind === 'truck' ? buildTruck() : boss.kind === 'balloon' ? buildBalloon() : boss.kind === 'monster' ? buildMonster() : buildBoss(); add(V.boss.g); if (V.boss.stamp) { add(V.boss.stamp); add(V.boss.wv); }
+    V.boss = boss.kind === 'crane' ? buildCrane() : boss.kind === 'calc' ? buildCalc(boss.skin) : boss.kind === 'maquina' ? buildMaquina(boss.skin) : boss.kind === 'tabeliao' ? buildTabeliao() : boss.kind === 'panel' ? buildPanel() : boss.kind === 'freezer' ? buildFreezer() : boss.kind === 'truck' ? buildTruck() : boss.kind === 'balloon' ? buildBalloon() : boss.kind === 'monster' ? buildMonster() : buildBoss(); add(V.boss.g); if (V.boss.stamp) { add(V.boss.stamp); add(V.boss.wv); }
     const gate = add(new THREE.Group()); scene.add(gate);
     for (let i = 0; i < 9; i++) mesh(new THREE.BoxGeometry(1, 1, 1.4), MAT.crate, boss.a0 - 0.5, 0.5 + i, 0, gate);
     V.gate = gate;
@@ -3187,7 +3363,7 @@ function syncDynamic(){
     if (o.parts.shield) o.body.position.y = Math.abs(Math.sin(e.t * 0.2)) * 0.05;
     if (o.parts.spin && !(G.freeze > 0)) o.parts.spin.rotation.z -= e.vx * 0.12;
     if (o.parts.legs || o.parts.wheels) o.body.position.y = Math.abs(Math.sin(e.t * 0.25)) * 0.04;
-    if (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato') o.body.scale.y = e.hy === 0 && (e.land || 0) < 8 ? 0.72 : (e.hvy < 0 ? 1.15 : 1);
+    if (e.type === 'carimbo' || e.type === 'pinguim' || e.type === 'gato' || e.type === 'caderninho') o.body.scale.y = e.hy === 0 && (e.land || 0) < 8 ? 0.72 : (e.hvy < 0 ? 1.15 : 1);
   });
   springs.forEach((s, i) => { const v = V.springs[i], c = s.comp > 0 ? 0.35 : 1; v.coil.scale.y = c; v.plate.position.y = 0.18 + 0.3 * c; });
   checks.forEach((k, i) => V.checks[i].material.color.setHex(k.on ? (t % 20 < 10 ? 0xffd23f : 0xfff2a0) : 0x8a8f9a));
@@ -3242,7 +3418,8 @@ function syncDynamic(){
       o.g.scale.x = 1; const st = b.state;
       o.torso.scale.y = st === 'calc' ? 0.82 : 1; o.torso.rotation.z = st === 'dead' ? -Math.min(1.3, b.t / 60) : st === 'walk' ? Math.sin(t * 0.25) * 0.04 : 0;
       o.arms.forEach((a, i) => { a.rotation.z = (i ? -1 : 1) * ((b.arm || 0) * 2.6 + (st === 'walk' ? Math.sin(t * 0.25 + i * Math.PI) * 0.3 : 0.2)); });
-      drawCalc(o, st === 'dead' ? '0,00' : b.inv > 0 ? 'ERRO' : st === 'calc' ? (t % 30 < 15 ? 'CALC...' : '') : st === 'cascata' ? '% % %' : '1.501 h', st === 'calc' ? '#2a3a20' : '#1a2a10');
+      if (b.skin === 'fiado') drawCalc(o, st === 'dead' ? 'QUITADO' : b.inv > 0 ? 'PAGOU!' : st === 'calc' ? (t % 30 < 15 ? 'SOMANDO' : '') : st === 'cascata' ? 'PENDURA!' : 'R$ 2.350', st === 'calc' ? '#2a3a20' : '#7a1020');
+      else drawCalc(o, st === 'dead' ? '0,00' : b.inv > 0 ? 'ERRO' : st === 'calc' ? (t % 30 < 15 ? 'CALC...' : '') : st === 'cascata' ? '% % %' : '1.501 h', st === 'calc' ? '#2a3a20' : '#1a2a10');
     } else if (b.kind === 'maquina') {
       const fz = b.state === 'frozen'; o.g.scale.x = 1;
       o.eyesM.forEach(m => m.material.color.setHex(fz ? 0x8fd3ff : (t % 20 < 10 || b.state === 'charge' ? 0xff3d3d : 0xb81c30)));
@@ -3393,7 +3570,7 @@ function updHUD(){
   $('hGoldK').classList.toggle('hidden', !golds.length); $('hGold').classList.toggle('hidden', !golds.length); $('hGold').textContent = gn + '/' + golds.length; $('lives').classList.toggle('low', golds.length > 0);
   $('seloHud').classList.toggle('hidden', !(LV && G.docs[LV.zone]) || G.state === 'title');
   $('bossHud').classList.toggle('hidden', bh < 0);
-  if (bh >= 0) $('bossName').textContent = boss.kind === 'tabeliao' ? 'Tabelião' : boss.kind === 'maquina' ? 'Máquina' : boss.kind === 'calc' ? 'Calculadora' : boss.kind === 'crane' ? 'Guindaste' : 'Dr. Carimbo';
+  if (bh >= 0) $('bossName').textContent = boss.skin ? BOSS_SKIN[boss.skin].nome : boss.kind === 'tabeliao' ? 'Tabelião' : boss.kind === 'maquina' ? 'Máquina' : boss.kind === 'calc' ? 'Calculadora' : boss.kind === 'crane' ? 'Guindaste' : 'Dr. Carimbo';
   if (bh >= 0) $('bossPips').innerHTML = Array.from({ length: (boss && boss.maxHp) || 6 }, (_, i) => `<i class="${i < bh ? '' : 'off'}"></i>`).join(' ');
 }
 
@@ -3424,7 +3601,11 @@ function confetti(){
 }
 const NOTES = {
   10: { found: 'Você achou a Licença de Importação no alto do pátio!', hint: 'Tem um documento escondido nesta fase: a Licença de Importação. Dica: procure lá no alto, depois da mola perto do meio da fase.', act2: 'Agora vem o Ato 3: o Guindaste da Alfândega.',
-       winGot: 'Você venceu o Guindaste e a cerveja importada chegou à Adega!', winMiss: 'Você venceu o Guindaste! Faltou a Licença de Importação: ela está no alto do pátio, no Ato 1 desta zona.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
+       winGot: 'Você venceu o Guindaste e a carga importada chegou à Adega!', winMiss: 'Você venceu o Guindaste! Faltou a Licença de Importação: ela está no alto do pátio, no Ato 1 desta zona.', next: 'Agora vem a Zona 11: a Rua do Fiado!' },
+  11: { found: 'Você achou o Livro Caixa no alto dos telhados da rua!', hint: 'Tem um documento escondido nesta fase: o Livro Caixa. Dica: procure lá no alto, depois da mola, no meio da fase.', act2: 'Agora vem o Ato 3: a Caderneta do Fiado.',
+       winGot: 'Você quitou a Caderneta do Fiado e o caixa da Adega fechou no azul!', winMiss: 'Você venceu a Caderneta do Fiado! Faltou o Livro Caixa: ele está no alto, no Ato 1 desta zona.', next: 'Agora vem a Zona 12: o Atacarejo!' },
+  12: { found: 'Você achou a Nota de Compra no alto das prateleiras!', hint: 'Tem um documento escondido nesta fase: a Nota de Compra. Dica: procure em cima das pilhas de caixas, perto do fim da fase.', act2: 'Agora vem o Ato 3: o Caixa do Atacarejo.',
+       winGot: 'Você venceu o Caixa do Atacarejo e o estoque da Adega está cheio!', winMiss: 'Você venceu o Caixa do Atacarejo! Faltou a Nota de Compra: ela está no alto das prateleiras, no Ato 1 desta zona.', next: '' },
   9: { found: 'Você achou a Nota Fiscal no alto do labirinto!', hint: 'Tem um documento escondido nesta fase: a Nota Fiscal. Dica: procure no andar mais alto do labirinto.', act2: 'Agora vem o Ato 3: a Calculadora Tributária.',
        winGot: 'Você travou a Calculadora e a Adega já emite Nota Fiscal!', winMiss: 'Você travou a Calculadora! Faltou a Nota Fiscal: ela está no andar mais alto do Ato 1 desta zona.', next: 'As próximas zonas da Temporada 2 chegam em breve!' },
   8: { found: 'Você achou o Registro do Funcionário no alto da fábrica!', hint: 'Tem um documento escondido nesta fase: o Registro do Funcionário. Dica: procure lá no alto, depois da segunda roda gigante.', act2: 'Agora vem o Ato 3: a Máquina da Folha.',
@@ -3445,6 +3626,10 @@ const NOTES = {
        winGot: '', winMiss: '', next: '' }
 };
 const EDU = {
+  11: { title: 'Fiado: o dinheiro que não entra no caixa',
+       text: 'Quando alguém pendura a conta, o produto sai da geladeira, mas o dinheiro não entra. Só que o fornecedor da Adega cobra à vista, na entrega. Se muita gente pendura e alguns não pagam, falta dinheiro para repor e a geladeira fica vazia para todo mundo. O Livro Caixa é onde a empresa anota tudo o que entra e tudo o que sai: é ele que mostra se a conta fecha no fim do mês.' },
+  12: { title: 'Atacarejo: barato, mas com custo escondido',
+       text: 'No atacarejo a caixa fechada sai um pouco mais barata. Mas toda compra tem custo de chegar até a loja: gasolina, estacionamento e o tempo do dono longe do balcão. Por isso vale juntar vários produtos numa viagem só. E a Nota de Compra (nota fiscal de entrada) prova de onde veio a mercadoria: a adega precisa guardar todas, porque é com elas que o contador fecha os impostos.' },
   10: { title: 'Importar não é só comprar lá fora',
         text: 'Para importar, a empresa precisa primeiro se habilitar no sistema de comércio exterior (o chamado Radar). Na chegada, a carga paga vários tributos em sequência: Imposto de Importação, IPI, PIS e Cofins-Importação e ICMS, um calculado em cima do outro, além de frete, seguro e armazenagem. Depois, cada declaração cai num canal: no verde a liberação é automática; no amarelo conferem os documentos; no vermelho conferem os documentos e abrem a carga; no cinza há um controle especial contra fraude. Por isso, muita pequena empresa contrata um despachante aduaneiro.' },
   9: { title: 'O labirinto dos impostos',
@@ -3508,6 +3693,13 @@ function finish(){
       + ' Documentos: ' + [1, 2, 3, 4, 5, 6].map(k => DOCNAME[k] + (G.docs[k] ? ' ✓' : ' ✗')).join(' · ') + '. Nova temporada liberada: a Adega vai crescer! Toque em Continuar.';
     if (all) confetti();
   }
+  if (G.act === 36) {
+    const n = [7, 8, 9, 10, 11, 12].filter(k => G.docs[k]).length, all = n === 6;
+    $('doneTitle').textContent = all ? 'A Adega cresceu!' : 'Temporada 2 concluída!';
+    $('seloNote').textContent = (all ? 'Com os 6 documentos da Temporada 2, a Adega do Edu cresceu com tudo em dia: sócio, funcionário, nota fiscal, importação, caixa no azul e estoque cheio. Festa no bairro!' : `Você venceu a Temporada 2 com ${n} de 6 documentos. Volte pelo mapa às fases com documento faltando.`)
+      + ' Documentos: ' + [7, 8, 9, 10, 11, 12].map(k => DOCNAME[k] + (G.docs[k] ? ' ✓' : ' ✗')).join(' · ') + '.';
+    if (all) confetti();
+  }
   $('againBtn').textContent = last ? 'Ver mapa' : 'Continuar';
   const fromAct = G.act; againAction = last ? () => openMap({ from: fromAct, to: fromAct }) : () => openMap({ from: fromAct, to: fromAct + 1, keep: true });
   saveFlag('motoca-ato', Math.min(BUILT + 1, G.act + 1));
@@ -3533,6 +3725,10 @@ function startAct(n, fresh, training){
   if (LV.tip) showTip(LV.tip);
 }
 const TIPS = {
+  fiado: { t: 'Rua do Fiado!', d: () => 'As cadernetas do fiado pulam atrás de você: pule em cima delas! As portas de aço das lojas sobem e descem: quando piscar, ela vai fechar. Os toldos que andam servem de plataforma.' },
+  cobranca: { t: 'Dia de cobrança!', d: () => 'A pilha de contas penduradas vem atrás e não para. Corra sem parar e use a arrancada nos muros. Cuidado com os vasos que caem das janelas!' },
+  atacarejo: { t: 'Atacarejo!', d: () => 'Carrinhos desgovernados passam rápido pelos corredores. As esteiras do caixa empurram você, e as empilhadeiras levam paletes que servem de plataforma. Cuidado com as caixas que caem das prateleiras!' },
+  rush: { t: 'Hora do rush!', d: () => 'O atacarejo vai fechar: esta fase tem contagem regressiva. Pegue as ampulhetas para ganhar tempo. Em cima é mais rápido e perigoso; embaixo é mais longo, mas tem ampulhetas.' },
   arrancada: { t: 'Nova habilidade: Arrancada!', d: () => (isTouch ? 'Parado, segure o botão ARRANCAR e solte: o Motoca dispara rolando.' : 'Parado, segure ↓ (ou Shift) e solte: o Motoca dispara rolando.') + ' Quanto mais tempo segurar, mais forte. A arrancada quebra as pilhas de papelada e derruba inimigos. Correndo e pulando rolando, ela vai longe!' + ' Na Temporada 2, cada fase também tem 3 selos dourados escondidos nos lugares mais difíceis.' },
   ponto: { t: 'Relógio de ponto!', d: () => 'Encoste no relógio para bater o ponto: prensas, esteiras e engrenagens param por alguns segundos. Cuidado com as engrenagens de dentes: pular em cima machuca, só a arrancada derruba. E as rodas gigantes giram com plataformas: suba e aproveite a volta.' },
   prazo: { t: 'O prazo está chegando!', d: () => 'Uma parede de papelada vem atrás de você e não para. Corra sem parar! Bater o ponto no relógio também segura o prazo por alguns segundos. Correndo, toque ' + (isTouch ? 'ARRANCAR' : '↓ (ou Shift)') + ' para rolar e quebrar a papelada sem perder tempo.' },
@@ -3681,8 +3877,8 @@ const ZINFO2 = [
   { name: 'Fábrica da Folha', col: '#a8b8c8', c: [740, 700], r: [200, 110] },
   { name: 'Labirinto Tributário', col: '#d8c060', c: [1250, 690], r: [220, 110] },
   { name: 'Porto da Importação', col: '#78b8d8', c: [1300, 300], r: [220, 120] },
-  { name: 'Obra Parada', col: '#e8a060', c: [790, 300], r: [200, 120] },
-  { name: 'O Sistema Caiu', col: '#9a88d8', c: [290, 290], r: [210, 130] }
+  { name: 'Rua do Fiado', col: '#e88a8a', c: [790, 300], r: [200, 120] },
+  { name: 'Atacarejo', col: '#8ab8e8', c: [290, 290], r: [210, 130] }
 ];
 let MAPN = MAPN1, ZINFO = ZINFO1;
 const MAP = { on: false, loop: false, pos: 0, target: 0, sel: 0, keep: false, next: 1, t: 0, s: 1, ox: 0, oy: 0, set: 1 };
@@ -3954,10 +4150,11 @@ function drawZoneDeco(c, k, z, t){
   if (k === 8) { c.strokeStyle = '#8a6a1a'; c.lineWidth = 6; c.lineCap = 'square'; c.beginPath(); for (let i = 0; i < 4; i++) { c.rect(cx - 150 + i * 22, cy - 40 + i * 14, 300 - i * 44, 120 - i * 28); } c.stroke(); c.lineCap = 'round'; }
   if (k === 9) { const cols = ['#d7263d', '#2e6bd0', '#3f9a3a', '#f28c28']; for (let i = 0; i < 6; i++) { c.fillStyle = cols[i % 4]; c.fillRect(cx - 150 + (i % 3) * 46, cy + 40 - Math.floor(i / 3) * 22, 42, 20); }
     c.strokeStyle = '#ffd23f'; c.lineWidth = 6; c.beginPath(); c.moveTo(cx + 90, cy + 70); c.lineTo(cx + 90, cy - 60); c.lineTo(cx + 170, cy - 60); c.stroke(); c.lineWidth = 2; c.beginPath(); c.moveTo(cx + 150, cy - 60); c.lineTo(cx + 150, cy - 20 + Math.sin(t * 0.04) * 8); c.stroke(); }
-  if (k === 10) { c.strokeStyle = '#f2c230'; c.lineWidth = 6; c.beginPath(); c.moveTo(cx + 100, cy + 80); c.lineTo(cx + 100, cy - 70); c.lineTo(cx - 40, cy - 70); c.stroke();
-    c.fillStyle = '#9a8a7a'; c.fillRect(cx - 150, cy - 10, 90, 80); c.strokeStyle = '#5a4a3a'; c.lineWidth = 3; for (let y = cy; y < cy + 70; y += 18) { c.beginPath(); c.moveTo(cx - 150, y); c.lineTo(cx - 60, y); c.stroke(); } }
-  if (k === 11) { c.fillStyle = '#2a2440'; roundRect(c, cx - 70, cy - 30, 140, 90, 10); c.fill(); c.fillStyle = '#5ac8f0'; c.fillRect(cx - 60, cy - 20, 120, 64);
-    c.strokeStyle = '#2a2440'; c.lineWidth = 6; c.beginPath(); c.arc(cx, cy + 12, 18, t * 0.08, t * 0.08 + Math.PI * 1.4); c.stroke(); c.fillStyle = '#2a2440'; c.fillRect(cx - 12, cy + 60, 24, 16); }
+  if (k === 10) { [[-130, 40, '#f0c66a'], [-60, 50, '#84b2d6'], [10, 40, '#e4a0b2']].forEach(([dx, dy, col]) => { const x = cx + dx, y = cy + dy; c.fillStyle = col; c.fillRect(x - 28, y - 30, 56, 46); c.fillStyle = '#7a3a2a'; c.beginPath(); c.moveTo(x - 34, y - 30); c.lineTo(x, y - 52); c.lineTo(x + 34, y - 30); c.fill(); c.fillStyle = '#4a3020'; c.fillRect(x - 8, y - 6, 16, 22); });
+    const bx = cx + 110, by = cy + 30; c.fillStyle = '#d7263d'; roundRect(c, bx - 34, by - 44, 68, 86, 8); c.fill(); c.fillStyle = '#fffbef'; c.fillRect(bx - 26, by - 36, 54, 70); c.fillStyle = '#d7263d'; c.font = '800 16px "Baloo 2", sans-serif'; c.textAlign = 'center'; c.fillText('FIADO', bx + 1, by + 2); }
+  if (k === 11) { c.fillStyle = '#f28c28'; for (const x of [cx - 140, cx - 40]) { c.fillRect(x, cy - 50, 8, 110); c.fillRect(x + 80, cy - 50, 8, 110); } c.fillStyle = '#2e6bd0'; for (const x of [cx - 140, cx - 40]) for (const y of [cy - 10, cy + 30]) c.fillRect(x, y, 88, 6);
+    [['#c8a070', -128, -6], ['#d7263d', -98, -6], ['#3f73b8', -28, -6], ['#2e9a5a', 2, 34], ['#f2c230', -120, 34]].forEach(([col, dx, dy]) => { c.fillStyle = col; c.fillRect(cx + dx, cy + dy - 22, 26, 22); });
+    const x = cx + 110 + Math.sin(t * 0.05) * 10, y = cy + 40; c.strokeStyle = '#8a9098'; c.lineWidth = 4; c.strokeRect(x - 26, y - 26, 52, 30); c.beginPath(); c.moveTo(x - 26, y - 26); c.lineTo(x - 40, y - 40); c.stroke(); c.fillStyle = '#1a0b12'; c.beginPath(); c.arc(x - 16, y + 10, 6, 0, Math.PI * 2); c.arc(x + 16, y + 10, 6, 0, Math.PI * 2); c.fill(); }
   if (k === 0) { [[-150, -40], [-80, 30], [140, -30]].forEach(([dx, dy], i) => { const x = cx + dx, y = cy + dy; c.fillStyle = ['#e08a64', '#84b2d6', '#f0c66a'][i]; c.fillRect(x - 16, y - 18, 32, 26); c.fillStyle = '#8a3a3a'; c.beginPath(); c.moveTo(x - 20, y - 18); c.lineTo(x, y - 34); c.lineTo(x + 20, y - 18); c.fill(); c.fillStyle = '#fff6e6'; c.fillRect(x - 6, y - 10, 12, 10); }); }
   if (k === 1) { const x = cx - 60, y = cy + 60; c.fillStyle = '#9aa4b4'; c.fillRect(x - 40, y - 40, 80, 46); c.fillStyle = '#d8d4ca'; for (let i = 0; i < 5; i++) c.fillRect(x - 34 + i * 16, y - 34, 6, 40); c.fillStyle = '#6a7486'; c.beginPath(); c.moveTo(x - 46, y - 40); c.lineTo(x, y - 62); c.lineTo(x + 46, y - 40); c.fill(); }
   if (k === 2) { c.fillStyle = '#ffffff'; [[-120, 30, 34], [110, 40, 28], [-20, 60, 22]].forEach(([dx, dy, r]) => { c.beginPath(); c.arc(cx + dx, cy + dy, r, Math.PI, 0); c.fill(); });
@@ -4023,7 +4220,7 @@ function frame(now){
 }
 const fontsReady = document.fonts ? Promise.race([document.fonts.load('800 40px "Baloo 2"'), new Promise(r => setTimeout(r, 2500))]) : Promise.resolve();
 fontsReady.then(() => {
-  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0, 3: loadNum('motoca-doc3') > 0, 4: loadNum('motoca-doc4') > 0, 5: loadNum('motoca-doc5') > 0, 6: loadNum('motoca-doc6') > 0, 7: loadNum('motoca-doc7') > 0, 8: loadNum('motoca-doc8') > 0, 9: loadNum('motoca-doc9') > 0, 10: loadNum('motoca-doc10') > 0 };
+  G.docs = { 1: loadNum('motoca-selo1') > 0, 2: loadNum('motoca-doc2') > 0, 3: loadNum('motoca-doc3') > 0, 4: loadNum('motoca-doc4') > 0, 5: loadNum('motoca-doc5') > 0, 6: loadNum('motoca-doc6') > 0, 7: loadNum('motoca-doc7') > 0, 8: loadNum('motoca-doc8') > 0, 9: loadNum('motoca-doc9') > 0, 10: loadNum('motoca-doc10') > 0, 11: loadNum('motoca-doc11') > 0, 12: loadNum('motoca-doc12') > 0 };
   makeTextures(); buildLevel(); applySky(LV.sky); spawn(); buildStatic(); buildDynamic(); hero = buildHero(); refreshTitle();
   $('loading').remove(); $('title').classList.remove('hidden');
   updateCamera(true); requestAnimationFrame(frame);
